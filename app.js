@@ -1,10 +1,10 @@
 var http = require('http');
 var async = require('async');
 var request = require('request').defaults({
-    jar: true
+    jar: true // enable cookies in request
 });
 
-
+// Login to the server
 var login = function(cb) {
     var opts = {
         url: "https://id.marketwatch.com/auth/submitlogin.json",
@@ -38,6 +38,7 @@ var login = function(cb) {
     });
 };
 
+// Submit a trade to the server
 var submitTrade = function(cb) {
     var opts = {
         url: 'http://www.marketwatch.com/game/testpleaseignore/trade/submitorder?week=1',
@@ -64,15 +65,17 @@ var submitTrade = function(cb) {
     };
 
     request.post(opts, function(err, res, body) {
+        if (err) return console.log(err);
+        console.log("Res:", res);
+        console.log("Attempted trade:", body);
         process.nextTick(function() {
-            if (err) return console.log(err);
-            console.log("Res:", res);
-            console.log("Attempted trade:", body);
             cb();
         });
     });
 
 }
+
+// Do all the bullshit
 async.series([
 
     function(cb) {
