@@ -27,5 +27,3 @@ var opts = {
 request.post(opts, function(err, res, body){
 	console.log(body);
 });
-
-console.log('Server running at http://127.0.0.1:1337/');
