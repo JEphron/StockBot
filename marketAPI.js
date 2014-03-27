@@ -108,20 +108,33 @@ function loadOrders(callback) {
     });
 }
 
+// Get the stats:
+// Ex:
+// { 'Net Worth': '$100,000.00',
+//   'Overall Gains': '$0.00',
+//   'Overall Returns': '0.00%',
+//   'Today\'s Gains': '0.00%',
+//   'Buying Power': '$180,048.00',
+//   'Cash Remaining': '$100,000.00',
+//   'Cash Borrowed': '$0.00',
+//   'Short Reserve': '$0.00' }
+
 function loadStats(callback) {
     request.get('http://www.marketwatch.com/game/' + credentials.gameName + '/portfolio/orders', function(err, res, body) {
         var $ = cheerio.load(body);
         var stats = {};
         $("section.playerdetail  ul.performance > li").each(function(i, el) {
-            console.log($(el).find('.label').text());
             stats[$(el).find('.label').text()] = $(el).find('.data').text();
         });
 
         $("section.playerdetail  ul.worth > li").each(function(i, el) {
             stats[$(el).find('.label').text()] = $(el).find('.data').text();
         });
-    console.log(stats);
-});
+        console.log(stats);
+        process.nextTick(function() {
+            callback(null, stats);
+        })
+    });
 }
 
 
