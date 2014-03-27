@@ -86,9 +86,10 @@ function placeOrder(stockID, shares, orderType, callback) {
 // Return a list of orders
 function loadOrders(callback) {
     request.get('http://www.marketwatch.com/game/' + credentials.gameName + '/portfolio/orders', function(err, res, body) {
+        // parse the HTML of the page
         var $ = cheerio.load(body);
         var orders = [];
-        // for each table row in the orders table
+        // for each row in the body of the table in the portfolio section
         $("section.portfolio > table > tbody tr").each(function(i, el) {
             // get each cell in the row
             var tds = $(el).find('td');
@@ -101,8 +102,12 @@ function loadOrders(callback) {
             };
         });
         console.log(orders);
+        process.nextTick(function() {
+            callback(null, orders);
+        })
     });
 }
+
 module.exports.init = init;
 module.exports.login = login;
 module.exports.placeOrder = placeOrder;
