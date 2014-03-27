@@ -108,7 +108,25 @@ function loadOrders(callback) {
     });
 }
 
+function loadStats(callback) {
+    request.get('http://www.marketwatch.com/game/' + credentials.gameName + '/portfolio/orders', function(err, res, body) {
+        var $ = cheerio.load(body);
+        var stats = {};
+        $("section.playerdetail  ul.performance > li").each(function(i, el) {
+            console.log($(el).find('.label').text());
+            stats[$(el).find('.label').text()] = $(el).find('.data').text();
+        });
+
+        $("section.playerdetail  ul.worth > li").each(function(i, el) {
+            stats[$(el).find('.label').text()] = $(el).find('.data').text();
+        });
+    console.log(stats);
+});
+}
+
+
 module.exports.init = init;
 module.exports.login = login;
 module.exports.placeOrder = placeOrder;
 module.exports.loadOrders = loadOrders;
+module.exports.loadStats = loadStats;

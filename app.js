@@ -15,10 +15,14 @@ async.series([
     function(callback) {
         API.login(callback);
     },
-    function(callback) {
-        API.placeOrder('STOCK-XNAS-ZNGA', 550, 'Buy', callback);
-    },
+    // function(callback) {
+    //     API.placeOrder('STOCK-XNAS-ZNGA', 550, 'Buy', callback);
+    // },
     function(callback) {
         API.loadOrders(callback);
+    },
+    function(callback) {
+        API.loadStats(callback);
     }
+
 ]);
