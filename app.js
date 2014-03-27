@@ -1,8 +1,8 @@
 var http = require('http'),
     async = require('async'),
-    API = require('./marketAPI');
+    marketWatchAPI = require('./marketWatchAPI');
 
-API.init({
+marketWatchAPI.init({
     password: 'immabot',
     email: 'a405312@drdrb.net',
     gameName: 'testpleaseignore',
@@ -13,16 +13,15 @@ API.init({
 async.series([
 
     function(callback) {
-        API.login(callback);
-    },
-    // function(callback) {
-    //     API.placeOrder('STOCK-XNAS-ZNGA', 550, 'Buy', callback);
-    // },
-    function(callback) {
-        API.loadOrders(callback);
+        marketWatchAPI.login(callback);
     },
     function(callback) {
-        API.loadStats(callback);
+        marketWatchAPI.placeOrder('STOCK-XNAS-ZNGA', 550, 'Buy', callback);
+    },
+    function(callback) {
+        marketWatchAPI.loadOrders(callback);
+    },
+    function(callback) {
+        marketWatchAPI.loadStats(callback);
     }
-
 ]);

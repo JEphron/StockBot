@@ -123,7 +123,9 @@ function loadStats(callback) {
     request.get('http://www.marketwatch.com/game/' + credentials.gameName + '/portfolio/orders', function(err, res, body) {
         var $ = cheerio.load(body);
         var stats = {};
+        // get each li that is the direct child of the ul with the class performance in the section with the class playerdetail
         $("section.playerdetail  ul.performance > li").each(function(i, el) {
+            // use label text as the key and the data as the value
             stats[$(el).find('.label').text()] = $(el).find('.data').text();
         });
 
