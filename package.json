@@ -16,6 +16,8 @@
   "dependencies": {
     "request": "~2.34.0",
     "async": "~0.2.10",
-    "cheerio": "~0.13.1"
+    "cheerio": "~0.13.1",
+    "sequelize": "~1.7.0",
+    "sqlite3": "~2.2.0"
   }
 }

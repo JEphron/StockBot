@@ -1,7 +1,8 @@
 var http = require('http'),
     async = require('async'),
     marketWatchAPI = require('./marketWatchAPI'),
-    stockDataAPI = require('./stockDataAPI');
+    stockDataAPI = require('./stockDataAPI'),
+    database = require('./database');
 
 marketWatchAPI.init({
     password: 'immabot',
@@ -9,6 +10,9 @@ marketWatchAPI.init({
     gameName: 'testpleaseignore',
     gamePassword: 'nodejs'
 });
+
+var SYMBOLS = ["GOOG", "SNE", "AMZN", "RHT"]; // symbols to track
+var TIMESTEP = 5 * 1000 * 60; // make trades every five minutes
 
 // Do all the bullshit
 async.series([
