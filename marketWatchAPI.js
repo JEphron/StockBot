@@ -108,6 +108,37 @@ function loadOrders(callback) {
     });
 }
 
+// Gets the players holdings as an array
+function loadHoldings(callback) {
+    // get the holding's partial
+    request.get('http://www.marketwatch.com/game/' + credentials.gameName + '/portfolio/Holdings?view=list&partial=true', function(err, res, body) {
+        if (err) return console.log(err);
+        var $ = cheerio.load(body);
+        var holdings = [];
+
+        // each tr is a seperate holding
+        $("tbody > tr").each(function(i, el) {
+            var tds = $(el).find('td');
+            holdings.push({
+                symbol: $(tds[0]).text().trim(),
+                last: $(tds[1]).text().trim(),
+                overallChange: $(tds[2]).text().trim(),
+                marketValue: $(tds[3]).text().trim(),
+                gainLoss: $(tds[4]).text().trim(),
+                dataSymbol: $(el).attr('data-symbol'),
+                type: $(el).attr('data-type'),
+                shares: $(el).attr('data-shares'),
+                pending: $(el).attr('data-pending')
+            });
+
+        });
+        console.log(holdings);
+        process.nextTick(function() {
+            callback(null, holdings);
+        })
+    });
+}
+
 // Get the stats:
 // Ex:
 // { 'Net Worth': '$100,000.00',
@@ -144,4 +175,5 @@ module.exports.init = init;
 module.exports.login = login;
 module.exports.placeOrder = placeOrder;
 module.exports.loadOrders = loadOrders;
+module.exports.loadHoldings = loadHoldings;
 module.exports.loadStats = loadStats;

@@ -16,12 +16,20 @@ async.series([
         marketWatchAPI.login(callback);
     },
     function(callback) {
-        marketWatchAPI.placeOrder('STOCK-XNAS-ZNGA', 550, 'Buy', callback);
+        var symbol = 'STOCK-XNAS-ZNGA';
+        var shares = 550;
+        var orderType = 'Buy';
+        marketWatchAPI.placeOrder(symbol, shares, orderType, callback);
     },
     function(callback) {
         marketWatchAPI.loadOrders(callback);
     },
     function(callback) {
         marketWatchAPI.loadStats(callback);
+    },
+    function(callback) {
+        marketWatchAPI.loadHoldings(function(err, holdings) {
+            callback();
+        });
     }
-]);
+], function(err, result) {});
