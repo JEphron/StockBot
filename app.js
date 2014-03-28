@@ -1,6 +1,7 @@
 var http = require('http'),
     async = require('async'),
-    marketWatchAPI = require('./marketWatchAPI');
+    marketWatchAPI = require('./marketWatchAPI'),
+    stockDataAPI = require('./stockDataAPI');
 
 marketWatchAPI.init({
     password: 'immabot',
@@ -29,6 +30,12 @@ async.series([
     },
     function(callback) {
         marketWatchAPI.loadHoldings(function(err, holdings) {
+            callback();
+        });
+    },
+    function(callback) {
+        stockDataAPI.getStockData(["ZNGA"], function(err, data) {
+            console.log(data.ZNGA);
             callback();
         });
     }

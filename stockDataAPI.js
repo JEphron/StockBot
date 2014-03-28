@@ -1,11 +1,14 @@
 var request = require('request');
 
+// Load the stock data from YAHOO's API
 function getStockData(stocksToGet, callback) {
-
+    // support passing a single symbol as a string instead of an array
+    if (typeof stocksToGet === 'string') stocksToGet = [stocksToGet];
+    // build the query string
     var s = 'q=select * from yahoo.finance.quotes where symbol in ("' + stocksToGet.join("\",\"") + '")';
-    var encoded = encodeURI(s);
-    var url = 'http://query.yahooapis.com/v1/public/yql?' + encoded + '&format=json&diagnostics=true&env=http://datatables.org/alltables.env';
-
+    // build the url
+    var url = 'http://query.yahooapis.com/v1/public/yql?' + encodeURI(s) + '&format=json&diagnostics=true&env=http://datatables.org/alltables.env';
+    // make the request
     request.get(url, function(err, res, body) {
         if (err) return console.log(err);
         var data = JSON.parse(body);
