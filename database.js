@@ -1,4 +1,6 @@
-// Module: database.js
+// database.js
+// Holds all the database stuff
+
 var Sequelize = require('sequelize'),
     sequelize = new Sequelize('db', 'username', 'password', {
         dialect: "sqlite"

@@ -1,3 +1,10 @@
+// stockDataAPI.js
+// Gets data about stocks and the market
+// =====================================
+// Functions
+// =========
+// getStockData() - gets a shitload of data from Yahoo's API
+
 var request = require('request');
 
 // Load the stock data from YAHOO's API

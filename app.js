@@ -1,8 +1,33 @@
+// app.js
+// Entrypoint for the application
+
 var http = require('http'),
     async = require('async'),
     marketWatchAPI = require('./marketWatchAPI'),
     stockDataAPI = require('./stockDataAPI'),
     database = require('./database');
+
+
+var TRACKEDSTOCKS = [{ // symbols to track
+    symbol: "GOOG",
+    exchange: "XNAS"
+}, {
+    symbol: "SNE",
+    exchange: "NYQ"
+}, {
+    symbol: "AMZN",
+    exchange: "XNAS"
+}, {
+    symbol: "RHT",
+    exchange: "NYQ"
+}];
+
+var TIMESTEP = 5 * 1000 * 60; // make trades every five minutes
+
+database.init({
+    trackedstocks: TRACKEDSTOCKS,
+    timestep: TIMESTEP
+});
 
 marketWatchAPI.init({
     password: 'immabot',
@@ -11,8 +36,6 @@ marketWatchAPI.init({
     gamePassword: 'nodejs'
 });
 
-var SYMBOLS = ["GOOG", "SNE", "AMZN", "RHT"]; // symbols to track
-var TIMESTEP = 5 * 1000 * 60; // make trades every five minutes
 
 // Do all the bullshit
 async.series([

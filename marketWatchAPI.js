@@ -1,3 +1,14 @@
+// marketWatchAPI.js
+// Provides a way to send/receive information from marketwatch.com
+// ===============================================================
+// Functions
+// =========
+// login() - logs the client into the server
+// placeOrder() - places an order (buy/sell/short/etc) with the server
+// loadOrders() - gets the currently open orders
+// loadHoldings() - gets the current holdings
+// loadStats() - gets player stats
+
 var cheerio = require('cheerio'),
     request = require('request').defaults({
         jar: true // enable cookies in request
