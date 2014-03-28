@@ -3,10 +3,9 @@
 
 var http = require('http'),
     async = require('async'),
-    marketWatchAPI = require('./marketWatchAPI'),
+    MWAccount = require('./marketWatchAccount'),
     stockDataAPI = require('./stockDataAPI'),
     database = require('./database');
-
 
 var TRACKEDSTOCKS = [{ // symbols to track
     symbol: "GOOG",

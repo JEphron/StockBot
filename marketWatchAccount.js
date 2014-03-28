@@ -1,28 +1,29 @@
-// marketWatchAPI.js
+// marketWatchAccount.js
 // Provides a way to send/receive information from marketwatch.com
 // ===============================================================
 // Functions
 // =========
 // login() - logs the client into the server
 // placeOrder() - places an order (buy/sell/short/etc) with the server
-// loadOrders() - gets the currently open orders
-// loadHoldings() - gets the current holdings
-// loadStats() - gets player stats
+// getOrders() - gets the currently open orders
+// getHoldings() - gets the current holdings
+// getStats() - gets player stats
 
 var cheerio = require('cheerio'),
+    async = require('async')
     request = require('request').defaults({
         jar: true // enable cookies in request
     });
 
-var credentials = {};
-
-function init(creds) {
-    credentials = creds;
+var API = function(creds) {
+    this.credentials = creds;
 }
 
+API.prototype.credentials = {};
+
 // Login to the server
-function login(callback) {
-    console.log(credentials)
+API.prototype.login = function(callback) {
+    console.log(this.credentials)
     var opts = {
         url: 'https://id.marketwatch.com/auth/submitlogin.json',
         headers: {
@@ -35,8 +36,8 @@ function login(callback) {
             'Cache-Control': 'no-cache'
         },
         json: {
-            password: credentials.password,
-            username: credentials.email,
+            password: this.credentials.password,
+            username: this.credentials.email,
             realm: 'default',
             savelogin: 'true',
             template: 'default',
@@ -57,17 +58,18 @@ function login(callback) {
             });
         });
     });
+
 };
 
 // Submit an order to the server
-function placeOrder(stockID, shares, orderType, callback) {
+API.prototype.placeOrder = function(stockID, shares, orderType, callback) {
     var opts = {
-        url: 'http://www.marketwatch.com/game/' + credentials.gameName + '/trade/submitorder?week=1', // DANGER DANGER WHAT IS THIS EVEN?
+        url: 'http://www.marketwatch.com/game/' + this.credentials.gameName + '/trade/submitorder?week=1', // DANGER DANGER WHAT IS THIS EVEN?
         headers: {
             'Host': 'www.marketwatch.com',
             'Origin': 'http://www.marketwatch.com',
             'Pragma': 'no-cache',
-            'Referer': 'http://www.marketwatch.com/game/' + credentials.gameName + '/trade',
+            'Referer': 'http://www.marketwatch.com/game/' + this.credentials.gameName + '/trade',
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36',
             'X-Requested-With': 'XMLHttpRequest',
             'Connection': 'keep-alive',
@@ -95,8 +97,8 @@ function placeOrder(stockID, shares, orderType, callback) {
 
 // Get the portfolio page and parse the orders table
 // Return a list of orders
-function loadOrders(callback) {
-    request.get('http://www.marketwatch.com/game/' + credentials.gameName + '/portfolio/orders', function(err, res, body) {
+API.prototype.getOrders = function(callback) {
+    request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/orders', function(err, res, body) {
         // parse the HTML of the page
         var $ = cheerio.load(body);
         var orders = [];
@@ -120,9 +122,9 @@ function loadOrders(callback) {
 }
 
 // Gets the players holdings as an array
-function loadHoldings(callback) {
+API.prototype.getHoldings = function(callback) {
     // get the holding's partial
-    request.get('http://www.marketwatch.com/game/' + credentials.gameName + '/portfolio/Holdings?view=list&partial=true', function(err, res, body) {
+    request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/Holdings?view=list&partial=true', function(err, res, body) {
         if (err) return console.log(err);
         var $ = cheerio.load(body);
         var holdings = [];
@@ -161,8 +163,8 @@ function loadHoldings(callback) {
 //   'Cash Borrowed': '$0.00',
 //   'Short Reserve': '$0.00' }
 
-function loadStats(callback) {
-    request.get('http://www.marketwatch.com/game/' + credentials.gameName + '/portfolio/orders', function(err, res, body) {
+API.prototype.getStats = function(callback) {
+    request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/orders', function(err, res, body) {
         var $ = cheerio.load(body);
         var stats = {};
         // get each li that is the direct child of the ul with the class performance in the section with the class playerdetail
@@ -181,10 +183,4 @@ function loadStats(callback) {
     });
 }
 
-
-module.exports.init = init;
-module.exports.login = login;
-module.exports.placeOrder = placeOrder;
-module.exports.loadOrders = loadOrders;
-module.exports.loadHoldings = loadHoldings;
-module.exports.loadStats = loadStats;
+exports = module.exports = API;
