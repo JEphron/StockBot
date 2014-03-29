@@ -75,9 +75,15 @@ async.series({
                 gamePassword: 'nodejs'
             }));
             /*
-            ACCOUNTS.push(new MWAccount({
+            accounts.push(new MWAccount({
                 password: 'abcd1234',
                 email: 'nadrojj@mac.com',
+                gameName: 'testpleaseignore',
+                gamePassword: 'nodejs'
+            }));
+            accounts.push(new MWAccount({
+                password: 'thisisapassword',
+                email: 'aidanpieper@gmail.com',
                 gameName: 'testpleaseignore',
                 gamePassword: 'nodejs'
             }));
