@@ -3,9 +3,10 @@
 
 var http = require('http'),
     async = require('async'),
+    Sync = require('sync'),
     MWAccount = require('./marketWatchAccount'),
-    stockDataAPI = require('./stockDataAPI'),
-    database = require('./database');
+    stockBotEngine = require('./stockBotEngine'),
+    databaseController = require('./database');
 
 var TRACKEDSTOCKS = [{ // symbols to track
     symbol: "GOOG",
@@ -21,48 +22,66 @@ var TRACKEDSTOCKS = [{ // symbols to track
     exchange: "NYQ"
 }];
 
-var TIMESTEP = 5 * 1000 * 60; // make trades every five minutes
+var timestep = 1000 * 5; // make trades every x milliseconds
+var stockBotEngine;
+var accounts = [];
 
-database.init({
-    trackedstocks: TRACKEDSTOCKS,
-    timestep: TIMESTEP
-});
+// This gets called for each symbol each timestep
+// data is whatever's returned from the Yahoo Finance API
+// call back with whatever action you want to perform in the format:
+// {
+//  dataSymbol: "STOCK-NYQ-SNE",
+//  action: "buy" || "sell" || "short" || "none",
+//  amount: 1000
+// }
+function onTimestep(data, callback) {
+    console.log("--------")
+    console.log(data.MIC);
 
-marketWatchAPI.init({
-    password: 'immabot',
-    email: 'a405312@drdrb.net',
-    gameName: 'testpleaseignore',
-    gamePassword: 'nodejs'
-});
+    callback({
+        dataSymbol: "STOCK-" + data.MIC + "-" + data.stockData.Symbol,
+        action: "short",
+        amount: 50
+    });
+}
 
 
-// Do all the bullshit
-async.series([
+async.series({
+        initDB: function(next) {
+            databaseController.init({
+                trackedstocks: TRACKEDSTOCKS
+            }, next);
+        },
 
-    function(callback) {
-        marketWatchAPI.login(callback);
+        createAccounts: function(next) {
+            accounts.push(new MWAccount({
+                password: 'immabot',
+                email: 'a405312@drdrb.net',
+                gameName: 'testpleaseignore',
+                gamePassword: 'nodejs'
+            }));
+            /*
+            ACCOUNTS.push(new MWAccount({
+                password: 'abcd1234',
+                email: 'nadrojj@mac.com',
+                gameName: 'testpleaseignore',
+                gamePassword: 'nodejs'
+            }));
+            */
+            next();
+        },
+
+        initEngine: function(next) {
+            stockBotEngine = new stockBotEngine({
+                MWAccounts: accounts,
+                db: databaseController,
+                timestep: timestep
+            }, next);
+        }
+        // ,test: function(next) {
+        //     accounts[0].placeOrder("STOCK-NYQ-SNE", 10, "Sell", function() {});
+        // }
     },
-    function(callback) {
-        var symbol = 'STOCK-XNAS-ZNGA';
-        var shares = 550;
-        var orderType = 'Buy';
-        marketWatchAPI.placeOrder(symbol, shares, orderType, callback);
-    },
-    function(callback) {
-        marketWatchAPI.loadOrders(callback);
-    },
-    function(callback) {
-        marketWatchAPI.loadStats(callback);
-    },
-    function(callback) {
-        marketWatchAPI.loadHoldings(function(err, holdings) {
-            callback();
-        });
-    },
-    function(callback) {
-        stockDataAPI.getStockData(["ZNGA"], function(err, data) {
-            console.log(data.ZNGA);
-            callback();
-        });
-    }
-], function(err, result) {});
+    function(err, results) { // Done
+        stockBotEngine.on('timestep', onTimestep);
+    })

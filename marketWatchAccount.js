@@ -48,11 +48,9 @@ API.prototype.login = function(callback) {
     request.post(opts, function(err, res, body) {
         if (err) return console.log(err);
         console.log("Login:", body);
-
         // server replies with a url to get auth cookies from
         request.get(body.url, function(err, res, body) {
             if (err) return console.log(err);
-            console.log("Got post-login auth page:", body);
             process.nextTick(function() {
                 callback();
             });
@@ -62,7 +60,7 @@ API.prototype.login = function(callback) {
 };
 
 // Submit an order to the server
-API.prototype.placeOrder = function(stockID, shares, orderType, callback) {
+API.prototype.placeOrder = function(dataSymbol, shares, orderType, callback) {
     var opts = {
         url: 'http://www.marketwatch.com/game/' + this.credentials.gameName + '/trade/submitorder?week=1', // DANGER DANGER WHAT IS THIS EVEN?
         headers: {
@@ -76,9 +74,9 @@ API.prototype.placeOrder = function(stockID, shares, orderType, callback) {
             'Cache-Control': 'no-cache',
         },
         json: [{
-            Fuid: stockID,
+            Fuid: dataSymbol,
             Shares: shares.toString(),
-            Type: orderType
+            Type: orderType.charAt(0).toUpperCase() + orderType.slice(1)
         }]
     };
 
@@ -114,7 +112,6 @@ API.prototype.getOrders = function(callback) {
                 activationDate: $(tds[3]).text().replace(/\t|\n|\r/g, '')
             };
         });
-        console.log(orders);
         process.nextTick(function() {
             callback(null, orders);
         })
@@ -145,7 +142,6 @@ API.prototype.getHoldings = function(callback) {
             });
 
         });
-        console.log(holdings);
         process.nextTick(function() {
             callback(null, holdings);
         })
@@ -176,7 +172,6 @@ API.prototype.getStats = function(callback) {
         $("section.playerdetail  ul.worth > li").each(function(i, el) {
             stats[$(el).find('.label').text()] = $(el).find('.data').text();
         });
-        console.log(stats);
         process.nextTick(function() {
             callback(null, stats);
         })
