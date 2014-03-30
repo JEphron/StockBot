@@ -5,7 +5,8 @@ var Sequelize = require('sequelize'),
     async = require('async'),
     sequelize = new Sequelize('db', 'username', 'password', {
         dialect: "sqlite",
-        storage: './db/database.sqlite'
+        storage: './db/database.sqlite',
+        logging: false
     });
 
 module.exports.sequelize = sequelize;
@@ -28,6 +29,22 @@ module.exports.init = function(params, callback) {
             priceAtTimeOfPurchase: Sequelize.FLOAT,
             stopLimit: Sequelize.FLOAT
         });
+
+        db.Snapshot = sequelize.define('Snapshot', {
+            Ask: Sequelize.FLOAT,
+            Bid: Sequelize.FLOAT,
+            AskRealTime: Sequelize.FLOAT,
+            BidRealTime: Sequelize.FLOAT,
+            Change: Sequelize.FLOAT,
+            ChangeRealtime: Sequelize.FLOAT,
+            PercentChange: Sequelize.FLOAT,
+            ChangeinPercent: Sequelize.FLOAT,
+            LastTradePriceOnly: Sequelize.FLOAT
+
+        });
+
+        db.TrackedStock.hasMany(db.Snapshot);
+        db.Snapshot.belongsTo(db.TrackedStock);
 
         // sync
         sequelize.sync({

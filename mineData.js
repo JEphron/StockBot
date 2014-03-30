@@ -1,13 +1,7 @@
-// mineData.js
-// Mines intra-day stock data from Yahoo Finance API
-// ===============================================================
-
 var Sequelize = require('sequelize'),
     sequelize = new Sequelize('db', 'username', 'password', {
         dialect: "sqlite",
-        storage: 'db/testDatabase.sqlite',
-        logging: false
-
+        storage: 'db/testDatabase.sqlite'
     }),
     stockDataAPI = require('./yahooFinanceAPI'),
     async = require('async');
@@ -18,10 +12,6 @@ var Symbol = sequelize.define('Symbol', {
 });
 
 var Day = sequelize.define('Day', {
-    TimeStamp: {
-        type: Sequelize.DATE,
-        defaultValue: Sequelize.NOW
-    },
     DaysLow: Sequelize.FLOAT,
     DaysHigh: Sequelize.FLOAT,
     YearLow: Sequelize.FLOAT,
@@ -29,10 +19,6 @@ var Day = sequelize.define('Day', {
 });
 
 var Snapshot = sequelize.define('Snapshot', {
-    TimeStamp: {
-        type: Sequelize.DATE,
-        defaultValue: Sequelize.NOW
-    },
     Ask: Sequelize.FLOAT,
     Bid: Sequelize.FLOAT,
     AskRealTime: Sequelize.FLOAT,
@@ -51,13 +37,14 @@ Snapshot.belongsTo(Symbol);
 Snapshot.belongsTo(Day, {
     as: "Day"
 });
+
 sequelize.sync({
     force: true
 }).success(function() {
     setupDatabase();
 });
 
-//Stocks to track
+// var TIMESTEP = 5 * 1000 * 60;
 var STOCKS = [{
     symbol: 'GOOG',
     exchange: 'XNAS'
@@ -76,13 +63,12 @@ var STOCKS = [{
 }, {
     symbol: 'MSFT',
     exchange: 'XNAS',
-
 }, {
     symbol: 'FB',
     exchange: 'XNAS'
 }];
 
-var TIMESTEP = 2.5 * 1000 * 60; //2.5 minutes
+var TIMESTEP = 5 * 1000;
 
 var stockNames = [];
 
@@ -133,7 +119,6 @@ function loop() {
                 LastTradePriceOnly: stock.LastTradePriceOnly
             }).success(function(snapshot) {
                 currentDay.addSnapshot(snapshot);
-                // snapshot.setDay(currentDay);
                 Symbol.find({
                     where: {
                         symbol: stock.Symbol
@@ -143,7 +128,6 @@ function loop() {
                 });
             });
         });
-
     });
 
     setTimeout(function() {

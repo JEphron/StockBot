@@ -30,21 +30,35 @@ var accounts = [];
 // data is whatever's returned from the Yahoo Finance API
 // call back with whatever action you want to perform in the format:
 // {
-//  dataSymbol: "STOCK-NYQ-SNE",
+//  dataSymbol: data.dataSymbol,
 //  action: "buy" || "sell" || "short" || "none",
 //  amount: 1000
 // }
 function onTimestep(data, callback) {
-    console.log("--------")
-    console.log(data.MIC);
+    var action = "none";
+    var amount = 50;
+    var historicalSnapshots = [];
+    Sync(function() {
+        var prev = data.loadPrevious.sync(null, 1);
+        console.log(data.dataSymbol);
+        console.log(prev[0].dataValues);
+    });
+
+    // for (var i = 0; i < 5; i++) {
+    //     Sync(function() {
+
+    //         historicalSnapshots.push(prev);
+    //     });
+    // }
+
+
 
     callback({
-        dataSymbol: "STOCK-" + data.MIC + "-" + data.stockData.Symbol,
-        action: "short",
-        amount: 50
+        dataSymbol: data.dataSymbol, // leave this as it is
+        action: action,
+        amount: amount
     });
 }
-
 
 async.series({
         initDB: function(next) {

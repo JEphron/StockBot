@@ -16,9 +16,15 @@ function getStockData(stocksToGet, callback) {
     // build the url
     var url = 'http://query.yahooapis.com/v1/public/yql?' + encodeURI(s) + '&format=json&diagnostics=true&env=http://datatables.org/alltables.env';
     // make the request
+    console.log(url);
     request.get(url, function(err, res, body) {
         if (err) return console.log(err);
-        var data = JSON.parse(body);
+        try {
+            var data = JSON.parse(body);
+        } catch (e) {
+            console.log(body);
+            callback(e);
+        }
         var results = data.query.results.quote;
         var stocks = {};
 
