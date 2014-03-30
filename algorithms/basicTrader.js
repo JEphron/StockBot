@@ -30,7 +30,7 @@ module.exports.onTimestep = function(data, callback) {
     var action = "none";
     var amount = 50;
     var historicalSnapshots = [];
-
+    console.log("Timestep!");
     // will attempt to load the last n previous snapshots so we can try to make educated decisions
     // if we are less than n timesteps from the start of the program, 
     // the results of queries with indices greater than the current timestep will be null

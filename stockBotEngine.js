@@ -4,24 +4,28 @@ var events = require('events'),
     stockDataAPI = require('./yahooFinanceAPI'),
     async = require('async');
 
-function Engine(params, callback) {
-    this.accounts = params.MWAccounts;
-    this.orm = params.db;
-    this.timestep = params.timestep;  
-    this.masterAccount = params.MWAccounts[0];
-    events.EventEmitter.call(this);
-    var engine = this;
+function Engine() {};
+
+// do this in a funky way in order to support sync object creation
+Engine.new = function(params, callback) {
+    var engine = new Engine();
+    engine.accounts = params.MWAccounts;
+    engine.orm = params.db;
+    engine.timestep = params.timestep;  
+    engine.masterAccount = params.MWAccounts[0];
+    events.EventEmitter.call(engine);
+
     async.series({
-        one: engine.login.bind(this),
-        two: engine.tick.bind(this),
+        one: engine.login.bind(engine),
+        two: engine.tick.bind(engine),
 
     }, function() {
         process.nextTick(function() {
-            callback();
+            callback(null, engine);
         });
     });
-};
 
+}
 Engine.prototype.__proto__ = events.EventEmitter.prototype;
 
 Engine.prototype.login = function(callback) {
@@ -100,7 +104,6 @@ Engine.prototype.generateLoadHistoricalStockData = function(stockSymbol) {
 Engine.prototype.tick = function(callback) {
     var data = {};
     var engine = this;
-
     var symbols = [];
     async.waterfall([
         // load a bunch of crap
