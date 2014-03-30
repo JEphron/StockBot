@@ -8,6 +8,9 @@ var http = require('http'),
     stockBotEngine = require('./stockBotEngine'),
     databaseController = require('./database');
 
+// Change this to whichever algorithm you decide to use
+var onTimestep = require('./algorithms/basicTrader').onTimestep;
+
 var TRACKEDSTOCKS = [{ // symbols to track
     symbol: "GOOG",
     exchange: "XNAS"
@@ -25,9 +28,6 @@ var TRACKEDSTOCKS = [{ // symbols to track
 var timestep = 1000 * 5; // make trades every x milliseconds
 var stockBotEngine;
 var accounts = [];
-
-// Change this to whichever algorithm you decide to use
-var onTimestep = require('./algorithms/basicTrader').onTimestep;
 
 async.series({
         initDB: function(next) {
