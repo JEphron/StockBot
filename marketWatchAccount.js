@@ -16,6 +16,8 @@ var cheerio = require('cheerio'),
     });
 
 var API = function(creds) {
+    this.db = creds.db;
+    delete creds.db;
     this.credentials = creds;
 }
 
@@ -62,7 +64,7 @@ API.prototype.login = function(callback) {
 // Submit an order to the server
 API.prototype.placeOrder = function(dataSymbol, shares, orderType, callback) {
     var opts = {
-        url: 'http://www.marketwatch.com/game/' + this.credentials.gameName + '/trade/submitorder?week=1', // DANGER DANGER WHAT IS THIS EVEN?
+        url: 'http://www.marketwatch.com/game/' + this.credentials.gameName + '/trade/submitorder',
         headers: {
             'Host': 'www.marketwatch.com',
             'Origin': 'http://www.marketwatch.com',

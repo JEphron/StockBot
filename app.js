@@ -12,18 +12,20 @@ var http = require('http'),
 var onTimestep = require('./algorithms/basicTrader').onTimestep;
 
 var TRACKEDSTOCKS = [{ // symbols to track
-    symbol: "GOOG",
-    exchange: "XNAS"
-}, {
-    symbol: "SNE",
-    exchange: "NYQ"
-}, {
-    symbol: "AMZN",
-    exchange: "XNAS"
-}, {
-    symbol: "RHT",
-    exchange: "NYQ"
-}];
+        symbol: "GOOG",
+        exchange: "XNAS"
+    }
+    // , {
+    //     symbol: "SNE",
+    //     exchange: "NYQ"
+    // }, {
+    //     symbol: "AMZN",
+    //     exchange: "XNAS"
+    // }, {
+    //     symbol: "RHT",
+    //     exchange: "NYQ"
+    // }
+];
 
 var timestep = 1000 * 5; // make trades every x milliseconds
 var stockBotEngine;
@@ -39,21 +41,24 @@ Sync(function() {
         password: 'immabot',
         email: 'a405312@drdrb.net',
         gameName: 'testpleaseignore',
-        gamePassword: 'nodejs'
+        gamePassword: 'nodejs',
+        db: databaseController
     }));
 
     // accounts.push(new MWAccount({
     //     password: 'abcd1234',
     //     email: 'nadrojj@mac.com',
     //     gameName: 'testpleaseignore',
-    //     gamePassword: 'nodejs'
+    //     gamePassword: 'nodejs',
+    //     db: databaseController
     // }));
 
     // accounts.push(new MWAccount({
     //     password: 'thisisapassword',
     //     email: 'aidanpieper@gmail.com',
     //     gameName: 'testpleaseignore',
-    //     gamePassword: 'nodejs'
+    //     gamePassword: 'nodejs',
+    //     db: databaseController
     // }));
 
     stockBotEngine = StockBotEngine.new.sync(null, {

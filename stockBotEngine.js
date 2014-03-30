@@ -43,21 +43,57 @@ Engine.prototype.timestepActionCallback = function(params) {
     var action = params.action;
     if (action == "none")
         return;
+
+
     switch (action) {
         case 'buy':
+            console.log("Buying!");
             async.each(this.accounts, function(account, next) {
-                account.placeOrder(params.dataSymbol, params.amount, 'buy', next)
+                account.placeOrder(params.data.dataSymbol, params.amount, 'buy', next)
             })
+            // create a new buy lot
+            this.orm.db.Lot.create({
+                sharesOwned: params.amount,
+                priceAtTimeOfPurchase: params.data.stockData.AskRealTime,
+                stopLimit: params.stopLimit,
+                type: "buy"
+            }).success(function(lot) {
+                lot.setTrackedStock(params.data.stockObject);
+            });
             break;
         case 'sell':
+            console.log("Selling!");
+            if (!params.lotToSell) {
+                throw "param lotToSell must be specified in order to sell a lot";
+            }
+            params.lotToSell.sharesOwned -= params.amount;
+            if (params.lotToSell.sharesOwned == 0) {
+                params.lotToSell.destroy();
+            } else if (params.lotToSell.sharesOwned < 0) {
+                console.warn("\033[31mWARNING: Attempting to sell more than I have! I'll sell what I can, but don't be retarded in the future!");
+                params.amount += params.lotToSell.sharesOwned;
+                params.lotToSell.destroy();
+            } else {
+                params.lotToSell.save();
+            }
             async.each(this.accounts, function(account, next) {
-                account.placeOrder(params.dataSymbol, params.amount, 'sell', next)
-            })
+                account.placeOrder(params.data.dataSymbol, params.amount, 'sell', next)
+            });
             break;
         case 'short':
             async.each(this.accounts, function(account, next) {
-                account.placeOrder(params.dataSymbol, params.amount, 'short', next)
-            })
+                account.placeOrder(params.data.dataSymbol, params.amount, 'short', next)
+            });
+            // create a new short lot
+            this.orm.db.Lot.create({
+                sharesOwned: params.amount,
+                priceAtTimeOfPurchase: params.data.stockData.AskRealTime,
+                stopLimit: params.stopLimit,
+                type: "short"
+            }).success(function(lot) {
+                lot.setTrackedStock(data.stockObject);
+            });
+
             break;
         default:
             break;
@@ -105,6 +141,7 @@ Engine.prototype.tick = function(callback) {
     var data = {};
     var engine = this;
     var symbols = [];
+    // I hate everything about this function
     async.waterfall([
         // load a bunch of crap
         function(callback) {
@@ -120,59 +157,69 @@ Engine.prototype.tick = function(callback) {
         function(stocks, stockData, holdings, callback) {
             // for each of the stocks we loaded
             for (var i in stockData) {
-                var stock = stockData[i];
+                var currStockData = stockData[i];
+                var stockDBObject;
+                for (var j in stocks) {
+                    if (stocks[j].symbol == currStockData.Symbol)
+                        stockDBObject = stocks[j];
+                }
+
                 // create a snapshot so we can do some analysis next tick
                 // wrap it in a closure to preserve scope
                 // this is disgusting.
-                (function(stock) {
+                (function(currStockData, stockDBObject) {
                     engine.orm.db.Snapshot.create({
-                        Ask: stock.Ask,
-                        Bid: stock.Bid,
-                        AskRealTime: stock.AskRealTime,
-                        BidRealTime: stock.BidRealTime,
-                        Change: stock.Change,
-                        ChangeRealtime: stock.ChangeRealtime,
-                        PercentChange: stock.PercentChange,
-                        ChangeinPercent: stock.ChangeinPercent,
-                        LastTradePriceOnly: stock.LastTradePriceOnly
+                        Ask: currStockData.Ask,
+                        Bid: currStockData.Bid,
+                        AskRealTime: currStockData.AskRealTime,
+                        BidRealTime: currStockData.BidRealTime,
+                        Change: currStockData.Change,
+                        ChangeRealtime: currStockData.ChangeRealtime,
+                        PercentChange: currStockData.PercentChange,
+                        ChangeinPercent: currStockData.ChangeinPercent,
+                        LastTradePriceOnly: currStockData.LastTradePriceOnly
                     }).success(function(snapshot) {
                         engine.orm.db.TrackedStock.find({
                             where: {
-                                symbol: stock.Symbol
+                                symbol: currStockData.Symbol
                             }
                         }).success(function(trackedStock) {
                             snapshot.setTrackedStock(trackedStock);
                             // compose the data which will be sent along with the 'timestep' event
                             timestepdata = {};
-                            timestepdata.stockData = stock;
+                            timestepdata.stockData = currStockData;
                             timestepdata.holdings = [];
                             // insert the relevant holdings data
                             for (var j in holdings) {
-                                if (holdings[j].symbol == stock.Symbol) {
-                                    timestepdata.holdings.push(holdings[j]);
+                                if (holdings[j].symbol == currStockData.Symbol) {
+                                    timestepdata.holdings.push(holdings[j]); // eight tabs in...
                                 }
                             }
                             if (timestepdata.holdings.length == 0) {
                                 timestepdata.holdings.push({
-                                    error: "No Holdings for " + stock.Symbol
+                                    error: "No Holdings for " + currStockData.Symbol // ballsack
                                 });
                             }
+
                             // insert the MIC
-                            for (var j in stocks)
-                                if (stocks[j].symbol == stock.Symbol) timestepdata.MIC = stocks[j].exchange;
-                            timestepdata.dataSymbol = "STOCK-" + timestepdata.MIC + "-" + stock.Symbol;
+                            timestepdata.MIC = stockDBObject.exchange;
+                            timestepdata.dataSymbol = "STOCK-" + timestepdata.MIC + "-" + currStockData.Symbol;
                             // create the loadPrevious function, which will allow the use to retreive saved snapshots
-                            timestepdata.loadPrevious = engine.generateLoadHistoricalStockData(stock.Symbol);
-                            // finally, emit the event along with the data and callback
-                            engine.emit('timestep', timestepdata, engine.timestepActionCallback.bind(engine));
+                            timestepdata.loadPrevious = engine.generateLoadHistoricalStockData(currStockData.Symbol);
+                            // bloaty bloaty blooo
+                            timestepdata.stockObject = stockDBObject;
+                            // find the lots that are associated with the stock symbol (symbol == stockDBObject == trackedStock == WHYYYY????) maximum redundancy level achieved
+                            stockDBObject.getLots().success(function(lots) {
+                                // I swear, if I have to add another fucking object to this shit...
+                                timestepdata.lots = lots;
+                                // finally, emit the event along with the data and callback. Whew.
+                                engine.emit('timestep', timestepdata, engine.timestepActionCallback.bind(engine));
+                            })
                         });
                     });
-                })(stock);
-
+                })(currStockData, stockDBObject); // needs to be nuked from orbit
             }
-
         }
-
     ]);
 
     setTimeout(this.tick.bind(this), this.timestep);

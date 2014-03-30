@@ -3,17 +3,19 @@
 
 var Sequelize = require('sequelize'),
     async = require('async'),
-    sequelize = new Sequelize('db', 'username', 'password', {
-        dialect: "sqlite",
-        storage: './db/database.sqlite',
-        logging: false
-    });
+    sequelize;
 
 module.exports.sequelize = sequelize;
 module.exports.Sequelize = Sequelize;
 var db = {};
 module.exports.db = db;
 module.exports.init = function(params, callback) {
+
+    sequelize = new Sequelize(params.db || 'db', params.username || 'username', params.password || 'password', {
+        dialect: params.dialect || "sqlite",
+        storage: params.storage || './db/database.sqlite',
+        logging: params.log || false
+    });
 
     if (!callback) callback = function() {}
     // dis right here one ugly sumbitch 
@@ -27,7 +29,8 @@ module.exports.init = function(params, callback) {
         db.Lot = sequelize.define('Lot', {
             sharesOwned: Sequelize.INTEGER,
             priceAtTimeOfPurchase: Sequelize.FLOAT,
-            stopLimit: Sequelize.FLOAT
+            stopLimit: Sequelize.FLOAT,
+            type: Sequelize.STRING
         });
 
         db.Snapshot = sequelize.define('Snapshot', {
@@ -45,6 +48,8 @@ module.exports.init = function(params, callback) {
 
         db.TrackedStock.hasMany(db.Snapshot);
         db.Snapshot.belongsTo(db.TrackedStock);
+        db.TrackedStock.hasMany(db.Lot);
+        db.Lot.belongsTo(db.TrackedStock);
 
         // sync
         sequelize.sync({

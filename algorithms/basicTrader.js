@@ -14,6 +14,7 @@ var Sync = require('sync');
  *      holdings: [{...}, {...}],           // A list of holdings pertaining to the current symbol
  *      MIC:    'ABC',                      // The 3-4 letter code for the exchange
  *      dataSymbol: 'STOCK-ABC-DEF',        // The symbol that marketwatch uses to ID a particular stock
+ *      lots: [...],                        // An array of sequelize data objects, these are the owned lots
  *      loadPrevious: function(index){...}  // A function which can be used to load snapshots of previous timesteps
  * }
  *
@@ -21,16 +22,21 @@ var Sync = require('sync');
  * in order to execute a decision.
  * The callback takes the following parameters as an object:
  * {
- *      dataSymbol: data.dataSymbol,                    // Select the stock. Leave it like this to use current
+ *      data: data,                                     // The data that was passed to the function
  *      action: "Buy" || "Sell" || "Short" || "None",   // Select the action. Case insensitive
- *      amount: 1000                                    // Number of shares to transact with
+ *      amount: 1000,                                   // Number of shares to transact with
+ *      stopLimit: -10.06                               // Point at which to sell, specified in percent difference
+ *                                                          // from price of buy. Only needed when sending a Buy or Short order
+ *
  * }
  */
+var amount = 1024;
+var action = "sell";
 module.exports.onTimestep = function(data, callback) {
-    var action = "none";
-    var amount = 50;
+
+
     var historicalSnapshots = [];
-    console.log("Timestep!");
+
     // will attempt to load the last n previous snapshots so we can try to make educated decisions
     // if we are less than n timesteps from the start of the program, 
     // the results of queries with indices greater than the current timestep will be null
@@ -42,9 +48,22 @@ module.exports.onTimestep = function(data, callback) {
         });
     }
 
+    amount /= 2;
+    var lot;
+    if (action == "buy") {
+        console.log("bbbb");
+        action = "sell";
+        lot = data.lots[0];
+    } else if (action == "sell") {
+        console.log("ssss");
+        action = "buy";
+        lot = null;
+    }
+
     callback({
-        dataSymbol: data.dataSymbol,
+        data: data,
         action: action,
-        amount: amount
+        amount: amount,
+        lotToSell: lot
     });
 }
