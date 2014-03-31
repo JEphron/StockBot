@@ -19,7 +19,16 @@ module.exports.init = function(params, callback) {
 
     if (!callback) callback = function() {}
     // dis right here one ugly sumbitch 
-    sequelize.drop().success(function() {
+    if (params.drop) {
+        sequelize.drop().success(function() {
+            doStuff();
+        });
+    } else {
+        doStuff();
+    }
+
+    function doStuff() {
+
         // define bullshits
         db.TrackedStock = sequelize.define('TrackedStock', {
             symbol: Sequelize.STRING,
@@ -53,7 +62,7 @@ module.exports.init = function(params, callback) {
 
         // sync
         sequelize.sync({
-            force: true
+            force: params.drop || true
         }).success(function() {
             // create bullshits
             async.each(params.trackedstocks,
@@ -72,12 +81,11 @@ module.exports.init = function(params, callback) {
                     });
                 }, function(err) {
                     if (err) return console.log(err);
-                    console.log("MEEEEEP");
                     process.nextTick(function() {
                         callback();
                     })
                 });
         })
-    });
+    }
 
 }
