@@ -24,7 +24,6 @@ Engine.new = function(params, callback) {
             callback(null, engine);
         });
     });
-
 }
 Engine.prototype.__proto__ = events.EventEmitter.prototype;
 
@@ -47,7 +46,7 @@ Engine.prototype.timestepActionCallback = function(params) {
 
     switch (action) {
         case 'buy':
-            console.log("Buying!");
+            console.log("Buying", params.amount, "shares of", params.data.dataSymbol);
             async.each(this.accounts, function(account, next) {
                 account.placeOrder(params.data.dataSymbol, params.amount, 'buy', next)
             })
@@ -62,7 +61,7 @@ Engine.prototype.timestepActionCallback = function(params) {
             });
             break;
         case 'sell':
-            console.log("Selling!");
+            console.log("Selling", params.amount, "shares of", params.data.dataSymbol);
             if (!params.lotToSell) {
                 throw "param lotToSell must be specified in order to sell a lot";
             }
@@ -81,6 +80,7 @@ Engine.prototype.timestepActionCallback = function(params) {
             });
             break;
         case 'short':
+            console.log("Shorting", params.amount, "shares of", params.data.dataSymbol);
             async.each(this.accounts, function(account, next) {
                 account.placeOrder(params.data.dataSymbol, params.amount, 'short', next)
             });
@@ -154,6 +154,31 @@ Engine.prototype.tick = function(callback) {
                 });
             });
         },
+        // // automatically sell lots that are below their stop-limits
+        // function(stocks, stockData, holdings, callback) {
+        //     // this will never ever happen unless I decide it should
+        //     if (SHOULD_AUTOSELL_ON_BELOW_STOP_LIMIT) {
+        //         // for each stock
+        //         async.each(stocks, function(stock, done) {
+        //             // get the lots for that stock
+        //             stock.getLots().success(function(lots) {
+        //                 // for each lot
+        //                 async.each(lots, function(lot, done) {
+
+        //                     if (stock.AskRealtime < lot.stopLimit) {
+        //                         engine.timestepActionCallback(); // cheap hackery
+        //                         lot.destroy().success(function() {
+
+        //                             done();
+        //                         }); // boom
+        //                     }
+        //                 }, done)
+        //             });
+        //         });
+        //     } else {
+        //         callback(null, stocks, stockData, holdings);
+        //     }
+        // },
         function(stocks, stockData, holdings, callback) {
             // for each of the stocks we loaded
             for (var i in stockData) {

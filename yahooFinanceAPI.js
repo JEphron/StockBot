@@ -23,7 +23,10 @@ function getStockData(stocksToGet, callback) {
             var data = JSON.parse(body);
         } catch (e) {
             console.log(body);
-            callback(e);
+            process.nextTick(function() {
+                callback(e);
+            });
+            return;
         }
         var results = data.query.results.quote;
         var stocks = {};

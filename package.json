@@ -19,6 +19,7 @@
     "cheerio": "~0.13.1",
     "sequelize": "~1.7.0",
     "sqlite3": "~2.2.0",
-    "sync": "~0.2.2"
+    "sync": "~0.2.2",
+    "node-schedule": "~0.1.13"
   }
 }
