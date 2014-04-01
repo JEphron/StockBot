@@ -180,4 +180,28 @@ API.prototype.getStats = function(callback) {
     });
 }
 
+API.prototype.getTransactions = function(callback) {
+    request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/transactionhistory?view=list&partial=true', function(err, res, body) {
+        var $ = cheerio.load(body);
+        var transactions = {};
+
+        $("tbody > tr").each(function(i, el) {
+            var tds = $(el).find('td');
+            transactions.push({
+                symbol: tds[0],
+                orderData: tds[1],
+                transactionData: tds[2],
+                type: tds[3],
+                shares: tds[4],
+                priceAtExecution: tds[5]
+            });
+        });
+
+        process.nextTick(function() {
+            callback(null, transactions);
+        })
+    });
+}
+
+
 exports = module.exports = API;
