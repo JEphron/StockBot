@@ -33,8 +33,6 @@ var Sync = require('sync');
 var amount = 1024;
 var action = "sell";
 module.exports.onTimestep = function(data, callback) {
-
-
     var historicalSnapshots = [];
 
     // will attempt to load the last n previous snapshots so we can try to make educated decisions
@@ -48,18 +46,19 @@ module.exports.onTimestep = function(data, callback) {
         });
     }
 
-    amount /= 2;
-    var lot;
-    if (action == "buy") {
-        console.log("bbbb");
-        action = "sell";
-        lot = data.lots[0];
-    } else if (action == "sell") {
-        console.log("ssss");
-        action = "buy";
-        lot = null;
-    }
+    // amount /= 2;
+    // var lot;
+    // if (action == "buy") {
+    //     action = "sell";
+    //     lot = data.lots[0];
+    // } else if (action == "sell") {
+    //     action = "buy";
+    //     lot = null;
+    // }
 
+    action = (Math.random() < 0.5) ? "buy" : "sell";
+    amount = Math.floor((Math.random() * 100) + 1);
+    lot = data.lots[Math.floor(Math.random() * data.lots.length)] || {};
     callback({
         data: data,
         action: action,

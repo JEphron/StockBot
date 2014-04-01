@@ -59,15 +59,14 @@ module.exports.init = function(params, callback) {
         db.Snapshot.belongsTo(db.TrackedStock);
         db.TrackedStock.hasMany(db.Lot);
         db.Lot.belongsTo(db.TrackedStock);
-
         // sync
         sequelize.sync({
-            force: params.drop || true
+            force: params.drop
         }).success(function() {
             // create bullshits
             async.each(params.trackedstocks,
                 function(stock, next) {
-                    db.TrackedStock.create({
+                    db.TrackedStock.findOrCreate({
                         symbol: stock.symbol,
                         exchange: stock.exchange
                     }).success(function(s) {
