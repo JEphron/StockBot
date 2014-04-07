@@ -4,6 +4,7 @@ var events = require('events'),
     stockDataAPI = require('./yahooFinanceAPI'),
     async = require('async');
 
+
 function Engine() {};
 
 // do this in a funky way in order to support sync object creation
@@ -13,12 +14,10 @@ Engine.new = function(params, callback) {
     engine.orm = params.db;
     engine.timestep = params.timestep;  
     engine.masterAccount = params.MWAccounts[0];
+    engine.funds = params.funds;
     events.EventEmitter.call(engine);
-
     async.series({
-        one: engine.login.bind(engine),
-        two: engine.tick.bind(engine),
-
+        login: engine.login.bind(engine),
     }, function() {
         process.nextTick(function() {
             callback(null, engine);
@@ -46,14 +45,22 @@ Engine.prototype.timestepActionCallback = function(params) {
 
     switch (action) {
         case 'buy':
-            console.log("Buying", params.amount, "shares of", params.data.dataSymbol);
+            //console.log("Buying", params.amount, "shares of", params.data.dataSymbol);
             async.each(this.accounts, function(account, next) {
                 account.placeOrder(params.data.dataSymbol, params.amount, 'buy', next)
             })
+
+            engine.funds -= params.amount * params.data.stockData.AskRealtime;
+
+            if (engine.funds < 0) {
+                console.error("\n\n\n YALL GOT FUCKED UP. \n\n\nFUNDS:", engine.funds, "TRADES:", snapshotIndex, "YOUR STATUS: [pleb]\n\n\n");
+                process.exit();
+                return;
+            }
             // create a new buy lot
             this.orm.db.Lot.create({
                 sharesOwned: params.amount,
-                priceAtTimeOfPurchase: params.data.stockData.AskRealTime,
+                priceAtTimeOfPurchase: params.data.stockData.AskRealtime,
                 stopLimit: params.stopLimit,
                 type: "buy"
             }).success(function(lot) {
@@ -61,7 +68,7 @@ Engine.prototype.timestepActionCallback = function(params) {
             });
             break;
         case 'sell':
-            console.log("Selling", params.amount, "shares of", params.data.dataSymbol);
+            //console.log("Selling", params.amount, "shares of", params.data.dataSymbol);
             if (!params.lotToSell) {
                 throw "param lotToSell must be specified in order to sell a lot";
             }
@@ -78,16 +85,19 @@ Engine.prototype.timestepActionCallback = function(params) {
             async.each(this.accounts, function(account, next) {
                 account.placeOrder(params.data.dataSymbol, params.amount, 'sell', next)
             });
+
+            engine.funds += params.amount * params.data.stockData.AskRealtime;
+
             break;
-        case 'short':
-            console.log("Shorting", params.amount, "shares of", params.data.dataSymbol);
+        case 'short': // WARNING: not fully supported
+            //console.log("Shorting", params.amount, "shares of", params.data.dataSymbol);
             async.each(this.accounts, function(account, next) {
                 account.placeOrder(params.data.dataSymbol, params.amount, 'short', next)
             });
             // create a new short lot
             this.orm.db.Lot.create({
                 sharesOwned: params.amount,
-                priceAtTimeOfPurchase: params.data.stockData.AskRealTime,
+                priceAtTimeOfPurchase: params.data.stockData.AskRealtime,
                 stopLimit: params.stopLimit,
                 type: "short"
             }).success(function(lot) {
@@ -99,6 +109,21 @@ Engine.prototype.timestepActionCallback = function(params) {
             break;
     }
 };
+
+// stop the loop, emit the complete event for each remaining lot. Needs to be made more legit.
+Engine.prototype.halt = function() {
+    var engine = this;
+    if (!engine.timeoutObject)
+        return console.log("SOME VOODOO SHIT HAPPENED RIGHT HERE");
+    clearTimeout(engine.timeoutObject);
+    engine.orm.db.Lot.findAll().success(function(lots) {
+        var data = {
+            lots: lots;
+        }
+        engine.emit('complete', data, engine.timestepActionCallback.bind(engine));
+    })
+
+}
 
 Engine.prototype.generateLoadHistoricalStockData = function(stockSymbol) {
     var engine = this;
@@ -149,13 +174,15 @@ Engine.prototype.tick = function(callback) {
                 for (var i in stocks) symbols.push(stocks[i].symbol);
                 stockDataAPI.getStockData(symbols, function(err, stockData) {
                     engine.masterAccount.getHoldings(function(err, holdings) {
-                        callback(null, stocks, stockData, holdings);
+                        engine.masterAccount.getStats(function(err, stats) {
+                            callback(null, stocks, stockData, holdings, stats);
+                        })
                     });
                 });
             });
         },
         // // automatically sell lots that are below their stop-limits
-        // function(stocks, stockData, holdings, callback) {
+        // function(stocks, stockData, holdings, stats, callback) {
         //     // this will never ever happen unless I decide it should
         //     if (SHOULD_AUTOSELL_ON_BELOW_STOP_LIMIT) {
         //         // for each stock
@@ -176,10 +203,10 @@ Engine.prototype.tick = function(callback) {
         //             });
         //         });
         //     } else {
-        //         callback(null, stocks, stockData, holdings);
+        //         callback(null, stocks, stockData, stats, holdings);
         //     }
         // },
-        function(stocks, stockData, holdings, callback) {
+        function(stocks, stockData, holdings, stats, callback) {
             // for each of the stocks we loaded
             for (var i in stockData) {
                 var currStockData = stockData[i];
@@ -196,8 +223,8 @@ Engine.prototype.tick = function(callback) {
                     engine.orm.db.Snapshot.create({
                         Ask: currStockData.Ask,
                         Bid: currStockData.Bid,
-                        AskRealTime: currStockData.AskRealTime,
-                        BidRealTime: currStockData.BidRealTime,
+                        AskRealtime: currStockData.AskRealtime,
+                        BidRealtime: currStockData.BidRealtime,
                         Change: currStockData.Change,
                         ChangeRealtime: currStockData.ChangeRealtime,
                         PercentChange: currStockData.PercentChange,
@@ -225,7 +252,6 @@ Engine.prototype.tick = function(callback) {
                                     error: "No Holdings for " + currStockData.Symbol // ballsack
                                 });
                             }
-
                             // insert the MIC
                             timestepdata.MIC = stockDBObject.exchange;
                             timestepdata.dataSymbol = "STOCK-" + timestepdata.MIC + "-" + currStockData.Symbol;
@@ -233,6 +259,8 @@ Engine.prototype.tick = function(callback) {
                             timestepdata.loadPrevious = engine.generateLoadHistoricalStockData(currStockData.Symbol);
                             // bloaty bloaty blooo
                             timestepdata.stockObject = stockDBObject;
+                            // find out how much money we actually have left
+                            timestepdata.funds = stats['Cash Remaining'].replace(/\$|\,/g, '');
                             // find the lots that are associated with the stock symbol (symbol == stockDBObject == trackedStock == WHYYYY????) maximum redundancy level achieved
                             stockDBObject.getLots().success(function(lots) {
                                 // I swear, if I have to add another fucking object to this shit...
@@ -247,7 +275,7 @@ Engine.prototype.tick = function(callback) {
         }
     ]);
 
-    setTimeout(this.tick.bind(this), this.timestep);
+    engine.timeoutObject = setTimeout(this.tick.bind(this), this.timestep);
     if (callback) callback();
 };
 

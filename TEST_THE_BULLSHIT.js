@@ -4,7 +4,13 @@ var async = require('async'),
     fs = require('fs'),
     orm = require('./database');
 
+var DATABASE_LOCATION = "./db/capturedData_day_2.sqlite";
+
 var onTimestep = require('./algorithms/basicTrader').onTimestep;
+var onComplete = require('./algorithms/basicTrader').onComplete;
+
+
+
 var fakeTrackedStock;
 
 function preloadStockdata(cb) {
@@ -16,8 +22,7 @@ function preloadStockdata(cb) {
         console.log(rows[i - 1])
         var prevOpen = rows[i - 1].split(",")[2];
         orm.db.Snapshot.create({
-            Ask: open,
-            AskRealTime: open,
+            AskRealtime: open,
             Change: open - prevOpen,
             ChangeRealtime: open - prevOpen,
             PercentChange: ((open - prevOpen) / prevOpen) * 100,
@@ -33,7 +38,6 @@ function preloadStockdata(cb) {
             }
         });
     };
-
 };
 
 
@@ -44,7 +48,9 @@ function fakeActionCallback(params) {
         return;
     switch (action) {
         case 'buy':
-            console.log("Buying", params.amount, "shares of", params.data.dataSymbol);
+            console.log("Buying", params.amount, "shares of", params.data.dataSymbol, "@", params.data.stockData.AskRealtime, "per share");
+            console.log("spent", params.data.stockData.AskRealtime * params.amount);
+
             orm.db.Lot.create({
                 sharesOwned: params.amount,
                 priceAtTimeOfPurchase: params.data.stockData.AskRealtime,
@@ -53,7 +59,7 @@ function fakeActionCallback(params) {
             }).success(function(lot) {
                 lot.setTrackedStock(fakeTrackedStock);
             });
-            funds -= params.amount * params.data.stockData.Ask;
+            funds -= params.amount * params.data.stockData.AskRealtime;
             if (funds < 0) {
                 console.error("\n\nYOU HAVE BECOME A PEASANT.\nPEASANTS CANNOT TRADE STOCKS.\nYOU HAVE LOST THE GAME.\n\n\nFUNDS:", funds, "TRADES:", snapshotIndex, "YOUR STATUS: [pleb]\n\n\n");
                 process.exit();
@@ -62,11 +68,14 @@ function fakeActionCallback(params) {
 
             break;
         case 'sell':
-            console.log("Selling", params.amount, "shares of", params.data.dataSymbol);
+            console.log("Selling", params.amount, "shares of", params.data.dataSymbol, "@", params.data.stockData.AskRealtime, "per share");
+            console.log("earned", params.amount * params.data.stockData.AskRealtime);
             if (!params.lotToSell) {
                 throw "param lotToSell must be specified in order to sell a lot";
             }
+
             params.lotToSell.sharesOwned -= params.amount;
+
             if (params.lotToSell.sharesOwned == 0) {
                 params.lotToSell.destroy();
             } else if (params.lotToSell.sharesOwned < 0) {
@@ -77,14 +86,14 @@ function fakeActionCallback(params) {
                 params.lotToSell.save();
             }
 
-            funds += params.amount * params.data.stockData.Ask;
+            funds += params.amount * params.data.stockData.AskRealtime;
             break;
         case 'short':
             console.log("Shorting", params.amount, "shares of", params.data.dataSymbol);
             // create a new short lot
             this.orm.db.Lot.create({
                 sharesOwned: params.amount,
-                priceAtTimeOfPurchase: params.data.stockData.AskRealTime,
+                priceAtTimeOfPurchase: params.data.stockData.AskRealtime,
                 stopLimit: params.stopLimit,
                 type: "short"
             }).success(function(lot) {
@@ -97,24 +106,24 @@ function fakeActionCallback(params) {
 }
 
 
-var snapshotIndex = 1;
+var snapshotIndex = 0;
 var funds = 100000;
 var snapshotCount;
 
 function loop() {
-    orm.db.Snapshot.find(snapshotIndex, {
-        include: [orm.db.TrackedStock]
-    }).success(function(snapshot) {
+    fakeTrackedStock.getSnapshots().success(function(snapshots) {
         var data = {};
-
+        var snapshot = snapshots[snapshotIndex];
         //exit();
         data.stockData = {
-            Ask: snapshot.Ask,
-            AskRealtime: snapshot.Ask,
+            Ask: snapshot.AskRealtime,
+            AskRealtime: snapshot.AskRealtime,
             Change: snapshot.Change,
             LastTradePriceOnly: snapshot.LastTradePriceOnly,
-            PercentChange: snapshot.PercentChange
+            PercentChange: snapshot.PercentChange,
+            ChangeRealtime: snapshot.ChangeRealtime
         };
+        data.funds = funds;
         data.loadPrevious = function(index, callback) {
             orm.db.Snapshot.count().success(function(snapshotCount) {
                 orm.db.TrackedStock.count().success(function(trackedStockCount) {
@@ -146,16 +155,20 @@ function loop() {
         fakeTrackedStock.getLots().success(function(lots) {
 
             data.lots = lots;
+            //if (snapshotIndex % 100 == 0)
             console.log("steppin", snapshotIndex, "funds:", funds);
             onTimestep(data, fakeActionCallback);
 
-            if (snapshotIndex < snapshotCount) {
+            if (snapshotIndex < snapshotCount - 1) {
                 snapshotIndex++;
                 process.nextTick(function() {
                     loop();
                 })
             } else {
-                console.log("DONE!", funds);
+                onComplete(data, fakeActionCallback);
+                console.log("DONE! Ended with", funds);
+
+
             }
         });
     })
@@ -167,21 +180,32 @@ var TRACKEDSTOCKS = [{ // symbols to track
 
 Sync(function() {
     var reload = false;
+
     orm.init.sync(null, {
         drop: reload,
         trackedstocks: TRACKEDSTOCKS,
-        storage: "./db/algoTestDatabase.sqlite",
-        log: console.log
+        storage: DATABASE_LOCATION,
+        log: false
     });
+    console.log(1)
+    orm.db.Lot.sync({
+        force: true
+    }).success(function() {
+        orm.db.TrackedStock.find({
+            where: {
+                id: 1
+            }
+        }).success(function(stock) {
+            stock.getSnapshots().success(function(snapshots) {
+                snapshotCount = snapshots.length;
+                fakeTrackedStock = stock;
+                if (reload)
+                    preloadStockdata.sync(); // this takes mad long to execute
+                loop();
 
-    orm.db.TrackedStock.find(1).success(function(stock) {
-        orm.db.Snapshot.count().success(function(c) {
-            snapshotCount = c;
-            fakeTrackedStock = stock;
-            if (reload)
-                preloadStockdata.sync(); // this takes mad long to execute
-            loop();
+            });
+
         })
 
-    })
+    });
 });

@@ -6,10 +6,14 @@ var http = require('http'),
     Sync = require('sync'),
     MWAccount = require('./marketWatchAccount'),
     StockBotEngine = require('./stockBotEngine'),
-    databaseController = require('./database');
+    databaseController = require('./database'),
+    schedule = require('node-schedule');
 
 // Change this to whichever algorithm you decide to use
-var onTimestep = require('./algorithms/basicTrader').onTimestep;
+var algo = require('./algorithms/basicTrader');
+
+var onTimestep = algo.onTimestep;
+var onComplete = algo.onComplete;
 
 var TRACKEDSTOCKS = [{ // symbols to track
         symbol: "GOOG",
@@ -31,7 +35,28 @@ var timestep = 1000 * 5; // make trades every x milliseconds
 var stockBotEngine;
 var accounts = [];
 
-// Run all this setup bullshit in sync.
+
+// 9:00 AM start
+var startRule = new schedule.RecurrenceRule();
+startRule.dayOfWeek = [1, 2, 3, 4, 5];
+startRule.hour = 9;
+startRule.minute = 0;
+
+var start = schedule.scheduleJob(startRule, function() {
+    stockBotEngine.tick();
+});
+
+// 4:00 PM end
+var endRule = new schedule.RecurrenceRule();
+endRule.dayOfWeek = [1, 2, 3, 4, 5];
+endRule.hour = 12 + 4;
+endRule.minute = 00;
+
+var end = schedule.scheduleJob(endRule, function() {
+    stockBotEngine.halt();
+});
+
+// Get it rollin'
 Sync(function() {
     databaseController.init.sync(null, {
         trackedstocks: TRACKEDSTOCKS
@@ -40,7 +65,7 @@ Sync(function() {
     accounts.push(new MWAccount({
         password: 'immabot',
         email: 'a405312@drdrb.net',
-        gameName: 'testpleaseignore',
+        gameName: 'testpleaseignore2',
         gamePassword: 'nodejs',
         db: databaseController
     }));
@@ -67,5 +92,8 @@ Sync(function() {
         timestep: timestep
     });
 
+
     stockBotEngine.on('timestep', onTimestep);
+    stockBotEngine.on('complete', onComplete);
+
 })

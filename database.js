@@ -45,8 +45,8 @@ module.exports.init = function(params, callback) {
         db.Snapshot = sequelize.define('Snapshot', {
             Ask: Sequelize.FLOAT,
             Bid: Sequelize.FLOAT,
-            AskRealTime: Sequelize.FLOAT,
-            BidRealTime: Sequelize.FLOAT,
+            AskRealtime: Sequelize.FLOAT,
+            BidRealtime: Sequelize.FLOAT,
             Change: Sequelize.FLOAT,
             ChangeRealtime: Sequelize.FLOAT,
             PercentChange: Sequelize.FLOAT,

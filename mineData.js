@@ -7,7 +7,7 @@ var Sequelize = require('sequelize'),
     async = require('async'),
     schedule = require('node-schedule');
 
-var Symbol = sequelize.define('Symbol', {
+var TrackedStock = sequelize.define('TrackedStock', {
     symbol: Sequelize.STRING,
     exchange: Sequelize.STRING
 });
@@ -34,8 +34,8 @@ var Snapshot = sequelize.define('Snapshot', {
 });
 
 Day.hasMany(Snapshot);
-Symbol.hasMany(Snapshot);
-Snapshot.belongsTo(Symbol);
+TrackedStock.hasMany(Snapshot);
+Snapshot.belongsTo(TrackedStock);
 Snapshot.belongsTo(Day, {
     as: "Day"
 });
@@ -77,7 +77,7 @@ var currentDay;
 function setupDatabase() {
     //Create symbols for all of our stocks
     async.each(STOCKS, function(stock, done) {
-        Symbol.create({
+        TrackedStock.findOrCreate({
             symbol: stock.symbol,
             exchange: stock.exchange
         }).success(function(symbol) {
@@ -88,26 +88,31 @@ function setupDatabase() {
         for (var index in STOCKS) {
             stockNames[index] = STOCKS[index].symbol;
         }
-        // Day.create({}).success(function(day) {
-        //     currentDay = day;
-        //     intervalObj = loop();
-        // });
+        Day.create({}).success(function(day) {
+            currentDay = day;
+            intervalObj = setInterval(function() {
+                process.nextTick(function() {
+                    loop();
+                });
+            }, TIMESTEP);
+
+        });
     });
 }
 
-// 9:00 AM start
-var startRule = new schedule.RecurrenceRule();
-startRule.dayOfWeek = [1, 2, 3, 4, 5];
-startRule.hour = 9;
-startRule.minute = 0;
+// // 9:00 AM start
+// var startRule = new schedule.RecurrenceRule();
+// startRule.dayOfWeek = [1, 2, 3, 4, 5];
+// startRule.hour = 9;
+// startRule.minute = 0;
 
-var intervalObj
-var start = schedule.scheduleJob(startRule, function() {
-    Day.create({}).success(function(day) {
-        currentDay = day;
-        intervalObj = loop();
-    });
-});
+// var intervalObj
+// var start = schedule.scheduleJob(startRule, function() {
+//     Day.create({}).success(function(day) {
+//         currentDay = day;
+//         intervalObj = loop();
+//     });
+// });
 
 // 4:00 PM end
 var endRule = new schedule.RecurrenceRule();
@@ -123,7 +128,6 @@ var end = schedule.scheduleJob(endRule, function() {
 function loop() {
     //Get stock data
     stockDataAPI.getStockData(stockNames, function(err, stockData) {
-        console.log(stockData);
         if (err) return console.log(err);
 
         //Loop through all of the stocks returned
@@ -131,7 +135,9 @@ function loop() {
         for (var i in stockData) {
             stockDataArray.push(stockData[i]);
         }
+        console.log("number of stocks:", stockDataArray.length);
         async.each(stockDataArray, function(stock, done) {
+            console.log("adding snapshot of symbol:", stock.Symbol);
             var currentdate = new Date();
             var datetime = currentdate.getDay() + "/" + currentdate.getMonth() + "/" + currentdate.getFullYear() + " @ " + currentdate.getHours() + ":" + currentdate.getMinutes() + ":" + currentdate.getSeconds();
 
@@ -149,7 +155,7 @@ function loop() {
                 Timestamp: datetime
             }).success(function(snapshot) {
                 currentDay.addSnapshot(snapshot);
-                Symbol.find({
+                TrackedStock.find({
                     where: {
                         symbol: stock.Symbol
                     }
@@ -157,15 +163,12 @@ function loop() {
                     snapshot.setSymbol(symbol);
                     done();
                 });
+            }).error(function(err) {
+                console.error("ERROR!", err);
+                done();
             });
         });
     });
-
-    return setInterval(function() {
-        process.nextTick(function() {
-            loop();
-        });
-    }, TIMESTEP);
 }
 
 function unLoop() {
