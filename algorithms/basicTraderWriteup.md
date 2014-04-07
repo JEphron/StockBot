@@ -1,5 +1,7 @@
 /////////////////////////////////////////////////
-// Condition         =>      Response       
+
+// Condition         =>      Response  
+
 /////////////////////////////////////////////////
 
 Price the same as last timestep = > Hold
