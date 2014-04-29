@@ -85,7 +85,7 @@ API.prototype.placeOrder = function(dataSymbol, shares, orderType, callback) {
     request.post(opts, function(err, res, body) {
         if (err) return console.log(err);
         if (body.succeeded) {
-            console.log("SUCCESS!", body.message);
+            console.log("SUCCESS!", dataSymbol, orderType, shares, body.message);
         } else {
             console.log("REJECTION:", body.message)
         }

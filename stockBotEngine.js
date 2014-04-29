@@ -37,11 +37,13 @@ Engine.prototype.login = function(callback) {
     });
 };
 
+var TRANSACTION_FEE = 10;
+
 Engine.prototype.timestepActionCallback = function(params) {
     var action = params.action;
     if (action == "none")
         return;
-
+    var engine = this;
 
     switch (action) {
         case 'buy':
@@ -50,13 +52,14 @@ Engine.prototype.timestepActionCallback = function(params) {
                 account.placeOrder(params.data.dataSymbol, params.amount, 'buy', next)
             })
 
-            engine.funds -= params.amount * params.data.stockData.AskRealtime;
+            engine.funds -= params.amount * params.data.stockData.AskRealtime - TRANSACTION_FEE;
 
             if (engine.funds < 0) {
-                console.error("\n\n\n YALL GOT FUCKED UP. \n\n\nFUNDS:", engine.funds, "TRADES:", snapshotIndex, "YOUR STATUS: [pleb]\n\n\n");
+                console.error("\n\n\n YALL GOT FUCKED UP. \n\n\nFUNDS:", engine.funds, "TRADES:", snapshotIndex);
                 process.exit();
                 return;
             }
+
             // create a new buy lot
             this.orm.db.Lot.create({
                 sharesOwned: params.amount,
@@ -66,31 +69,62 @@ Engine.prototype.timestepActionCallback = function(params) {
             }).success(function(lot) {
                 lot.setTrackedStock(params.data.stockObject);
             });
+            if (params.cb)
+                cb();
             break;
         case 'sell':
-            //console.log("Selling", params.amount, "shares of", params.data.dataSymbol);
+            // if the lot we're selling is a BUY lot then simply sell it
+            // otherwise, if it's a SHORT lot, then buy to cover. 
             if (!params.lotToSell) {
                 throw "param lotToSell must be specified in order to sell a lot";
             }
-            params.lotToSell.sharesOwned -= params.amount;
+
+            // why does this happen?
             if (params.lotToSell.sharesOwned == 0) {
                 params.lotToSell.destroy();
+                break;
+            }
+
+            params.lotToSell.sharesOwned -= params.amount;
+
+            if (params.lotToSell.sharesOwned == 0) {
+                console.log("aaand we're done");
+                params.lotToSell.destroy();
             } else if (params.lotToSell.sharesOwned < 0) {
-                console.warn("\033[31mWARNING: Attempting to sell more than I have! I'll sell what I can, but don't be retarded in the future!");
+                console.warn("\033[31mWARNING: Attempting to sell more than I have! I'll sell what I can, but don't be a such a silly fucker in the future!");
                 params.amount += params.lotToSell.sharesOwned;
                 params.lotToSell.destroy();
             } else {
                 params.lotToSell.save();
             }
+
+
+            var orderAction = "";
+
+            if (params.lotToSell.type == "buy")
+                orderAction = "sell";
+            else if (params.lotToSell.type == "short")
+                orderAction = "cover";
+
             async.each(this.accounts, function(account, next) {
-                account.placeOrder(params.data.dataSymbol, params.amount, 'sell', next)
+                account.placeOrder(params.data.dataSymbol, params.amount, orderAction, next)
             });
 
-            engine.funds += params.amount * params.data.stockData.AskRealtime;
-
+            if (params.lotToSell.type == "buy") {
+                var earned = params.amount * params.data.stockData.AskRealtime - TRANSACTION_FEE;
+                engine.funds += earned;
+                // console.log("earned", params.amount * params.data.stockData.AskRealtime - TRANSACTION_FEE, "funds:", funds);
+            } else if (params.lotToSell.type == "short") {
+                var earned = (params.lotToSell.priceAtTimeOfPurchase - params.data.stockData.AskRealtime) * params.amount - TRANSACTION_FEE;
+                engine.funds += earned;
+                // console.log("earned:", earned, "PATOP:", params.lotToSell.priceAtTimeOfPurchase, "curr ask:", params.data.stockData.AskRealtime);
+            }
+            if (params.cb)
+                cb();
             break;
         case 'short': // WARNING: not fully supported
-            //console.log("Shorting", params.amount, "shares of", params.data.dataSymbol);
+
+            console.log("Shorting", params.amount, "shares of", params.data.dataSymbol);
             async.each(this.accounts, function(account, next) {
                 account.placeOrder(params.data.dataSymbol, params.amount, 'short', next)
             });
@@ -101,8 +135,11 @@ Engine.prototype.timestepActionCallback = function(params) {
                 stopLimit: params.stopLimit,
                 type: "short"
             }).success(function(lot) {
-                lot.setTrackedStock(data.stockObject);
+                lot.setTrackedStock(params.data.stockObject);
             });
+
+            if (params.cb)
+                cb();
 
             break;
         default:
@@ -118,7 +155,7 @@ Engine.prototype.halt = function() {
     clearTimeout(engine.timeoutObject);
     engine.orm.db.Lot.findAll().success(function(lots) {
         var data = {
-            lots: lots;
+            lots: lots
         }
         engine.emit('complete', data, engine.timestepActionCallback.bind(engine));
     })
@@ -148,7 +185,7 @@ Engine.prototype.generateLoadHistoricalStockData = function(stockSymbol) {
                             offset: (snapshotCount / trackedStockCount) - index - 1,
                             limit: 1
                         }).success(function(snapshot) {
-                            callback(null, snapshot);
+                            callback(null, snapshot[0]);
                         }).error(function(err) {
                             console.log("ERROR", err);
                             return null;
@@ -215,7 +252,6 @@ Engine.prototype.tick = function(callback) {
                     if (stocks[j].symbol == currStockData.Symbol)
                         stockDBObject = stocks[j];
                 }
-
                 // create a snapshot so we can do some analysis next tick
                 // wrap it in a closure to preserve scope
                 // this is disgusting.
@@ -260,14 +296,19 @@ Engine.prototype.tick = function(callback) {
                             // bloaty bloaty blooo
                             timestepdata.stockObject = stockDBObject;
                             // find out how much money we actually have left
+
                             timestepdata.funds = stats['Cash Remaining'].replace(/\$|\,/g, '');
-                            // find the lots that are associated with the stock symbol (symbol == stockDBObject == trackedStock == WHYYYY????) maximum redundancy level achieved
-                            stockDBObject.getLots().success(function(lots) {
-                                // I swear, if I have to add another fucking object to this shit...
-                                timestepdata.lots = lots;
-                                // finally, emit the event along with the data and callback. Whew.
-                                engine.emit('timestep', timestepdata, engine.timestepActionCallback.bind(engine));
-                            })
+                            engine.funds = timestepdata.funds;
+
+                            (function(timestepdata) {
+                                // find the lots that are associated with the stock symbol (symbol == stockDBObject == trackedStock == WHYYYY????) maximum redundancy level achieved
+                                stockDBObject.getLots().success(function(lots) {
+                                    // I swear, if I have to add another fucking object to this shit...
+                                    timestepdata.lots = lots;
+                                    // finally, emit the event along with the data and callback. Whew.
+                                    engine.emit('timestep', timestepdata, engine.timestepActionCallback.bind(engine));
+                                })
+                            })(timestepdata);
                         });
                     });
                 })(currStockData, stockDBObject); // needs to be nuked from orbit

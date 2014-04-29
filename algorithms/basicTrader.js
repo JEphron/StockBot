@@ -39,6 +39,8 @@ module.exports.onTimestep = function(data, callback) {
     var historicalSnapshots = [];
     var change = data.stockData.ChangeRealtime;
     var lots = data.lots;
+
+
     // // will attempt to load the last n previous snapshots so we can try to make educated decisions
     // // if we are less than n timesteps from the start of the program, 
     // // the results of queries with indices greater than the current timestep will be null
@@ -75,18 +77,19 @@ module.exports.onTimestep = function(data, callback) {
         // if I am currently holding stock
         // check to see if its price is now above the priceAtTimeOfPurchase
         // if so then sell a percentage
-
         for (var i in lots) {
             var lot = lots[i];
             if (lot.type == "buy") {
                 if (data.stockData.AskRealtime > lot.priceAtTimeOfPurchase) {
                     process.nextTick(function() {
-                        callback({
-                            data: data,
-                            action: "sell",
-                            amount: lot.sharesOwned, // TODO: percentage based on angle of increase
-                            lotToSell: lot
-                        });
+                        (function(data, lot) {
+                            callback({
+                                data: data,
+                                action: "sell",
+                                amount: lot.sharesOwned, // TODO: percentage based on angle of increase
+                                lotToSell: lot
+                            });
+                        })(data, lot)
                     });
                 }
             }
@@ -122,9 +125,7 @@ module.exports.onComplete = function(data, callback) {
     var lots = data.lots;
     for (var i in lots) {
         var lot = lots[i];
-        console.log("CLOSURE A:", lot.sharesOwned);
         (function(lot, data) {
-            console.log("CLOSURE B:", lot.sharesOwned);
             callback({
                 data: data,
                 action: "sell",

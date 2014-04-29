@@ -4,10 +4,14 @@ var async = require('async'),
     fs = require('fs'),
     orm = require('./database');
 
-var DATABASE_LOCATION = "./db/capturedData_day_2.sqlite";
+var DATABASE_LOCATION = "./db/capturedData_day_5.sqlite";
 
-var onTimestep = require('./algorithms/basicTrader').onTimestep;
-var onComplete = require('./algorithms/basicTrader').onComplete;
+var TRANSACTION_FEE = 10;
+
+var ALGORITHM = './algorithms/movingAvgTrader';
+
+var onTimestep = require(ALGORITHM).onTimestep;
+var onComplete = require(ALGORITHM).onComplete;
 
 
 
@@ -46,11 +50,10 @@ function fakeActionCallback(params) {
     var action = params.action;
     if (action == "none")
         return;
+
     switch (action) {
         case 'buy':
             console.log("Buying", params.amount, "shares of", params.data.dataSymbol, "@", params.data.stockData.AskRealtime, "per share");
-            console.log("spent", params.data.stockData.AskRealtime * params.amount);
-
             orm.db.Lot.create({
                 sharesOwned: params.amount,
                 priceAtTimeOfPurchase: params.data.stockData.AskRealtime,
@@ -58,40 +61,78 @@ function fakeActionCallback(params) {
                 type: "buy"
             }).success(function(lot) {
                 lot.setTrackedStock(fakeTrackedStock);
+                //console.log("created lot", lot.id);
             });
-            funds -= params.amount * params.data.stockData.AskRealtime;
+            funds -= params.amount * params.data.stockData.AskRealtime - TRANSACTION_FEE;
+            console.log("spent", params.data.stockData.AskRealtime * params.amount + TRANSACTION_FEE, "funds:", funds);
             if (funds < 0) {
                 console.error("\n\nYOU HAVE BECOME A PEASANT.\nPEASANTS CANNOT TRADE STOCKS.\nYOU HAVE LOST THE GAME.\n\n\nFUNDS:", funds, "TRADES:", snapshotIndex, "YOUR STATUS: [pleb]\n\n\n");
                 process.exit();
                 return;
             }
-
+            if (params.cb)
+                cb();
             break;
+
+
         case 'sell':
-            console.log("Selling", params.amount, "shares of", params.data.dataSymbol, "@", params.data.stockData.AskRealtime, "per share");
-            console.log("earned", params.amount * params.data.stockData.AskRealtime);
+
+            // if the lot we're selling is a BUY lot then simply sell it
+            // otherwise, if it's a SHORT lot, then buy to cover. 
             if (!params.lotToSell) {
                 throw "param lotToSell must be specified in order to sell a lot";
+            }
+
+            // why does this happen?
+            if (params.lotToSell.sharesOwned == 0) {
+                params.lotToSell.destroy();
+                break;
+            }
+
+            if (params.lotToSell.type == "buy") {
+                console.log("Selling lot", params.lotToSell.id, params.amount, "shares of", params.data.dataSymbol, "@", params.data.stockData.AskRealtime, "per share", "|| owned: ", params.lotToSell.sharesOwned, " | lot id:", params.lotToSell.id);
+            } else if (params.lotToSell.type == "short") {
+                console.log("Buying to cover lot", params.lotToSell.id, params.amount, "shares of", params.data.dataSymbol, "@", params.data.stockData.AskRealtime, "per share", "|| shares shorted: ", params.lotToSell.sharesOwned, " | lot id:", params.lotToSell.id);
             }
 
             params.lotToSell.sharesOwned -= params.amount;
 
             if (params.lotToSell.sharesOwned == 0) {
+                // console.log("aaand we're done");
                 params.lotToSell.destroy();
             } else if (params.lotToSell.sharesOwned < 0) {
-                console.warn("\033[31mWARNING: Attempting to sell more than I have! I'll sell what I can, but don't be retarded in the future!");
+                //console.warn("\033[31mWARNING: Attempting to sell more than I have! I'll sell what I can, but don't be a such a silly fucker in the future!");
                 params.amount += params.lotToSell.sharesOwned;
                 params.lotToSell.destroy();
             } else {
                 params.lotToSell.save();
             }
 
-            funds += params.amount * params.data.stockData.AskRealtime;
+            if (params.lotToSell.type == "buy") {
+
+                funds += params.amount * params.data.stockData.AskRealtime - TRANSACTION_FEE;
+
+                console.log("earned", params.amount * params.data.stockData.AskRealtime - TRANSACTION_FEE, "funds:", funds);
+            } else if (params.lotToSell.type == "short") {
+
+                // console.log("LOOK AT ME");
+
+                var earned = (params.lotToSell.priceAtTimeOfPurchase - params.data.stockData.AskRealtime) * params.amount - TRANSACTION_FEE;
+                // console.log(params.lotToSell.id, params.lotToSell.priceAtTimeOfPurchase, params.data.stockData.AskRealtime, params.amount, earned);
+                funds += earned;
+
+                console.log("earned:", earned, "PATOP:", params.lotToSell.priceAtTimeOfPurchase, "curr ask:", params.data.stockData.AskRealtime);
+
+                //console.log("earned", (params.lotToSell.priceAtTimeOfPurchase - params.data.stockData.AskRealtime) * params.amount - TRANSACTION_FEE, "funds:", funds);
+            }
+            if (params.cb)
+                cb();
             break;
         case 'short':
-            console.log("Shorting", params.amount, "shares of", params.data.dataSymbol);
+            console.log("Shorting", params.amount, "shares of", params.data.dataSymbol, "@", params.data.stockData.AskRealtime, "per share");
             // create a new short lot
-            this.orm.db.Lot.create({
+            funds -= TRANSACTION_FEE;
+            orm.db.Lot.create({
                 sharesOwned: params.amount,
                 priceAtTimeOfPurchase: params.data.stockData.AskRealtime,
                 stopLimit: params.stopLimit,
@@ -99,6 +140,8 @@ function fakeActionCallback(params) {
             }).success(function(lot) {
                 lot.setTrackedStock(fakeTrackedStock);
             });
+            if (params.cb)
+                cb();
             break;
         default:
             break;
@@ -107,10 +150,11 @@ function fakeActionCallback(params) {
 
 
 var snapshotIndex = 0;
-var funds = 100000;
+var funds = 500000;
 var snapshotCount;
 
 function loop() {
+    console.log("tick - funds remaining [", funds, "]");
     fakeTrackedStock.getSnapshots().success(function(snapshots) {
         var data = {};
         var snapshot = snapshots[snapshotIndex];
@@ -123,6 +167,7 @@ function loop() {
             PercentChange: snapshot.PercentChange,
             ChangeRealtime: snapshot.ChangeRealtime
         };
+        data.dataSymbol = fakeTrackedStock.symbol;
         data.funds = funds;
         data.loadPrevious = function(index, callback) {
             orm.db.Snapshot.count().success(function(snapshotCount) {
@@ -140,10 +185,10 @@ function loop() {
                     }).success(function(trackedStock) {
                         trackedStock.getSnapshots({
                             sort: "id DESC",
-                            offset: (snapshotCount / trackedStockCount) - index - 1,
+                            offset: snapshotIndex - index - 1,
                             limit: 1
                         }).success(function(snapshot) {
-                            callback(null, snapshot);
+                            callback(null, snapshot[0]);
                         }).error(function(err) {
                             console.log("ERROR", err);
                             return null;
@@ -156,7 +201,7 @@ function loop() {
 
             data.lots = lots;
             //if (snapshotIndex % 100 == 0)
-            console.log("steppin", snapshotIndex, "funds:", funds);
+            //console.log("steppin", snapshotIndex, "funds:", funds);
             onTimestep(data, fakeActionCallback);
 
             if (snapshotIndex < snapshotCount - 1) {
@@ -167,8 +212,6 @@ function loop() {
             } else {
                 onComplete(data, fakeActionCallback);
                 console.log("DONE! Ended with", funds);
-
-
             }
         });
     })
@@ -178,16 +221,14 @@ var TRACKEDSTOCKS = [{ // symbols to track
     exchange: "XNAS"
 }];
 
-Sync(function() {
-    var reload = false;
+var reload = false;
 
-    orm.init.sync(null, {
-        drop: reload,
-        trackedstocks: TRACKEDSTOCKS,
-        storage: DATABASE_LOCATION,
-        log: false
-    });
-    console.log(1)
+orm.init({
+    drop: reload,
+    trackedstocks: TRACKEDSTOCKS,
+    storage: DATABASE_LOCATION,
+    log: false
+}, function() {
     orm.db.Lot.sync({
         force: true
     }).success(function() {
@@ -208,4 +249,5 @@ Sync(function() {
         })
 
     });
+
 });

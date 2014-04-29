@@ -1,7 +1,7 @@
 var Sequelize = require('sequelize'),
     sequelize = new Sequelize('db', 'username', 'password', {
         dialect: "sqlite",
-        storage: 'db/capturedData.sqlite'
+        storage: 'db/capturedData_day_5.sqlite'
     }),
     stockDataAPI = require('./yahooFinanceAPI'),
     async = require('async'),
@@ -68,7 +68,7 @@ var STOCKS = [{
     exchange: 'XNAS'
 }];
 
-var TIMESTEP = 1000 * 60 * 2.5;
+var TIMESTEP = 1000 * 60;
 
 var stockNames = [];
 
@@ -88,31 +88,36 @@ function setupDatabase() {
         for (var index in STOCKS) {
             stockNames[index] = STOCKS[index].symbol;
         }
-        Day.create({}).success(function(day) {
-            currentDay = day;
-            intervalObj = setInterval(function() {
-                process.nextTick(function() {
-                    loop();
-                });
-            }, TIMESTEP);
+        // Day.create({}).success(function(day) {
+        //     currentDay = day;
+        //     intervalObj = setInterval(function() {
+        //         process.nextTick(function() {
+        //             loop();
+        //         });
+        //     }, TIMESTEP);
 
-        });
+        // });
     });
 }
 
-// // 9:00 AM start
-// var startRule = new schedule.RecurrenceRule();
-// startRule.dayOfWeek = [1, 2, 3, 4, 5];
-// startRule.hour = 9;
-// startRule.minute = 0;
+// 9:00 AM start
+var startRule = new schedule.RecurrenceRule();
+startRule.dayOfWeek = [1, 2, 3, 4, 5];
+startRule.hour = 9;
+startRule.minute = 0;
 
-// var intervalObj
-// var start = schedule.scheduleJob(startRule, function() {
-//     Day.create({}).success(function(day) {
-//         currentDay = day;
-//         intervalObj = loop();
-//     });
-// });
+var intervalObj
+var start = schedule.scheduleJob(startRule, function() {
+    Day.create({}).success(function(day) {
+        currentDay = day;
+
+        intervalObj = setInterval(function() {
+            process.nextTick(function() {
+                loop();
+            });
+        }, TIMESTEP);
+    });
+});
 
 // 4:00 PM end
 var endRule = new schedule.RecurrenceRule();
@@ -160,7 +165,7 @@ function loop() {
                         symbol: stock.Symbol
                     }
                 }).success(function(symbol) {
-                    snapshot.setSymbol(symbol);
+                    snapshot.setTrackedStock(symbol);
                     done();
                 });
             }).error(function(err) {
@@ -169,6 +174,12 @@ function loop() {
             });
         });
     });
+    // return setInterval(function() {
+    //     process.nextTick(function() {
+    //         loop();
+    //     });
+    // }, TIMESTEP);
+
 }
 
 function unLoop() {

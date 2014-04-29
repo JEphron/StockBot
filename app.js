@@ -10,28 +10,26 @@ var http = require('http'),
     schedule = require('node-schedule');
 
 // Change this to whichever algorithm you decide to use
-var algo = require('./algorithms/basicTrader');
+var algo = require('./algorithms/movingAvgTrader');
 
 var onTimestep = algo.onTimestep;
 var onComplete = algo.onComplete;
 
 var TRACKEDSTOCKS = [{ // symbols to track
-        symbol: "GOOG",
-        exchange: "XNAS"
-    }
-    // , {
-    //     symbol: "SNE",
-    //     exchange: "NYQ"
-    // }, {
-    //     symbol: "AMZN",
-    //     exchange: "XNAS"
-    // }, {
-    //     symbol: "RHT",
-    //     exchange: "NYQ"
-    // }
-];
+    symbol: "MSFT",
+    exchange: "NSQ"
+}, {
+    symbol: "SNE",
+    exchange: "NYQ"
+}, {
+    symbol: "AMZN",
+    exchange: "XNAS"
+}, {
+    symbol: "RHT",
+    exchange: "NYQ"
+}];
 
-var timestep = 1000 * 5; // make trades every x milliseconds
+var timestep = 1000 * 60; // make trades every x milliseconds
 var stockBotEngine;
 var accounts = [];
 
@@ -43,8 +41,9 @@ startRule.hour = 9;
 startRule.minute = 0;
 
 var start = schedule.scheduleJob(startRule, function() {
-    stockBotEngine.tick();
+    getTheShowOnTheRoad();
 });
+getTheShowOnTheRoad();
 
 // 4:00 PM end
 var endRule = new schedule.RecurrenceRule();
@@ -56,44 +55,58 @@ var end = schedule.scheduleJob(endRule, function() {
     stockBotEngine.halt();
 });
 
-// Get it rollin'
-Sync(function() {
-    databaseController.init.sync(null, {
-        trackedstocks: TRACKEDSTOCKS
-    });
-
-    accounts.push(new MWAccount({
-        password: 'immabot',
-        email: 'a405312@drdrb.net',
-        gameName: 'testpleaseignore2',
-        gamePassword: 'nodejs',
-        db: databaseController
-    }));
-
-    // accounts.push(new MWAccount({
-    //     password: 'abcd1234',
-    //     email: 'nadrojj@mac.com',
-    //     gameName: 'testpleaseignore',
-    //     gamePassword: 'nodejs',
-    //     db: databaseController
-    // }));
-
-    // accounts.push(new MWAccount({
-    //     password: 'thisisapassword',
-    //     email: 'aidanpieper@gmail.com',
-    //     gameName: 'testpleaseignore',
-    //     gamePassword: 'nodejs',
-    //     db: databaseController
-    // }));
-
-    stockBotEngine = StockBotEngine.new.sync(null, {
-        MWAccounts: accounts,
-        db: databaseController,
-        timestep: timestep
-    });
+function getTheShowOnTheRoad() {
+    Sync(function() {
+        databaseController.init.sync(null, {
+            trackedstocks: TRACKEDSTOCKS,
+            drop: true
+        });
 
 
-    stockBotEngine.on('timestep', onTimestep);
-    stockBotEngine.on('complete', onComplete);
+        // sequelize = new Sequelize(params.db || 'db', params.username || 'username', params.password || 'password', {
+        //     dialect: params.dialect || "sqlite",
+        //     storage: params.storage || './db/database.sqlite',
+        //     logging: params.log || false
+        // });
 
-})
+
+        accounts.push(new MWAccount({
+            password: 'immabot',
+            email: 'a405312@drdrb.net',
+            gameName: 'testpleaseignore2',
+            gamePassword: 'nodejs',
+            db: databaseController
+        }));
+
+        // accounts.push(new MWAccount({
+        //     password: 'abcd1234',
+        //     email: 'nadrojj@mac.com',
+        //     gameName: 'testpleaseignore',
+        //     gamePassword: 'nodejs',
+        //     db: databaseController
+        // }));
+
+        // accounts.push(new MWAccount({
+        //     password: 'thisisapassword',
+        //     email: 'aidanpieper@gmail.com',
+        //     gameName: 'testpleaseignore',
+        //     gamePassword: 'nodejs',
+        //     db: databaseController
+        // }));
+
+        stockBotEngine = StockBotEngine.new.sync(null, {
+            MWAccounts: accounts,
+            db: databaseController,
+            timestep: timestep
+        });
+
+
+        stockBotEngine.on('timestep', onTimestep);
+        stockBotEngine.on('complete', onComplete);
+        console.log("STARTING");
+        stockBotEngine.tick();
+
+    })
+}
+
+console.log("StockBot locked and loaded...")
