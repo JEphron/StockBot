@@ -11,11 +11,24 @@ var db = {};
 module.exports.db = db;
 module.exports.init = function(params, callback) {
 
-    sequelize = new Sequelize(params.db || 'db', params.username || 'username', params.password || 'password', {
-        dialect: params.dialect || "sqlite",
-        storage: params.storage || './db/database.sqlite',
-        logging: params.log || false
-    });
+    if (params.URL) {
+        var match = [];
+        match = params.URL.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/)
+        console.log(match);
+        sequelize = new Sequelize(match[5], match[1], match[2], {
+            dialect: "mysql",
+            port: match[4],
+            host: match[3],
+            logging: params.log || false
+        });
+    } else {
+        sequelize = new Sequelize('db', 'username', 'password', {
+            dialect: "sqlite",
+            storage: './db/database.sqlite',
+            logging: params.log || false
+        });
+    }
+
 
     if (!callback) callback = function() {}
     // dis right here one ugly sumbitch 

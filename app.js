@@ -43,7 +43,7 @@ startRule.minute = 0;
 var start = schedule.scheduleJob(startRule, function() {
     getTheShowOnTheRoad();
 });
-
+getTheShowOnTheRoad();
 // 4:00 PM end
 var endRule = new schedule.RecurrenceRule();
 endRule.dayOfWeek = [1, 2, 3, 4, 5];
@@ -58,6 +58,7 @@ function getTheShowOnTheRoad() {
     Sync(function() {
         databaseController.init.sync(null, {
             trackedstocks: TRACKEDSTOCKS,
+            URL: process.env.CLEARDB_DATABASE_URL,
             drop: true
         });
 
@@ -72,7 +73,7 @@ function getTheShowOnTheRoad() {
         accounts.push(new MWAccount({
             password: 'immabot',
             email: 'a405312@drdrb.net',
-            gameName: 'testpleaseignore2',
+            gameName: process.env.MW_GAME_NAME || "durp",
             gamePassword: 'nodejs',
             db: databaseController
         }));

@@ -17,9 +17,11 @@
     "request": "~2.34.0",
     "async": "~0.2.10",
     "cheerio": "~0.13.1",
-    "sequelize": "~1.7.0",
+    "sequelize": "^1.7.3",
     "sqlite3": "~2.2.0",
     "sync": "~0.2.2",
-    "node-schedule": "~0.1.13"
+    "node-schedule": "~0.1.13",
+    "mysql": "^2.2.0",
+    "pg": "^3.0.3"
   }
 }
