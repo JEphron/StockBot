@@ -43,7 +43,6 @@ startRule.minute = 0;
 var start = schedule.scheduleJob(startRule, function() {
     getTheShowOnTheRoad();
 });
-getTheShowOnTheRoad();
 
 // 4:00 PM end
 var endRule = new schedule.RecurrenceRule();
