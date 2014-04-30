@@ -41,21 +41,21 @@ var stockBotEngine;
 var accounts = [];
 
 
-// 9:00 AM start
+// 9:05 AM start
 var startRule = new schedule.RecurrenceRule();
 startRule.dayOfWeek = [1, 2, 3, 4, 5];
-startRule.hour = 9;
-startRule.minute = 30;
+startRule.hour = 9 + 4;
+startRule.minute = 05;
 
 var start = schedule.scheduleJob(startRule, function() {
     getTheShowOnTheRoad();
 });
 
-// 4:00 PM end
+// 3:58 PM end
 var endRule = new schedule.RecurrenceRule();
 endRule.dayOfWeek = [1, 2, 3, 4, 5];
-endRule.hour = 12 + 4;
-endRule.minute = 00;
+endRule.hour = 12 + 3 + 4;
+endRule.minute = 58;
 
 var end = schedule.scheduleJob(endRule, function() {
     stockBotEngine.halt();
@@ -63,7 +63,7 @@ var end = schedule.scheduleJob(endRule, function() {
 
 // automatically start stockbot if starting between 9AM and 4PM
 var date = new Date();
-var current_hour = date.getHours() - 4;
+var current_hour = date.getHours() - 4; // timezoooooones
 
 console.log(current_hour);
 
