@@ -58,7 +58,7 @@ function getTheShowOnTheRoad() {
     Sync(function() {
         databaseController.init.sync(null, {
             trackedstocks: TRACKEDSTOCKS,
-            URL: process.env.CLEARDB_DATABASE_URL,
+            URL: "mysql://b870f4bf4082fe:962be024@us-cdbr-east-05.cleardb.net/heroku_2077dd96ba58fed?reconnect=true" || process.env.CLEARDB_DATABASE_URL,
             drop: true
         });
 
@@ -73,7 +73,7 @@ function getTheShowOnTheRoad() {
         accounts.push(new MWAccount({
             password: 'immabot',
             email: 'a405312@drdrb.net',
-            gameName: process.env.MW_GAME_NAME || "durp",
+            gameName: process.env.MW_GAME_NAME || "testpleaseignore",
             gamePassword: 'nodejs',
             db: databaseController
         }));

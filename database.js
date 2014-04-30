@@ -3,6 +3,7 @@
 
 var Sequelize = require('sequelize'),
     async = require('async'),
+    url = require('url'),
     sequelize;
 
 module.exports.sequelize = sequelize;
@@ -12,13 +13,13 @@ module.exports.db = db;
 module.exports.init = function(params, callback) {
 
     if (params.URL) {
-        var match = [];
-        match = params.URL.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/)
-        console.log(match);
-        sequelize = new Sequelize(match[5], match[1], match[2], {
+        var match = url.parse(params.URL);
+        //"mysql://b870f4bf4082fe:962be024@us-cdbr-east-05.cleardb.net/heroku_2077dd96ba58fed?reconnect=true" || process.env.CLEARDB_DATABASE_URL,
+        console.log(match.pathname.substr(1))
+        sequelize = new Sequelize(match.pathname.substr(1), match.auth.split(":")[0], match.auth.split(":")[1], {
             dialect: "mysql",
-            port: match[4],
-            host: match[3],
+            port: match.port,
+            host: match.hostname,
             logging: params.log || false
         });
     } else {
