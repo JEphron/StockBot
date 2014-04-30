@@ -7,7 +7,6 @@ var http = require('http'),
     MWAccount = require('./marketWatchAccount'),
     StockBotEngine = require('./stockBotEngine'),
     databaseController = require('./database'),
-    express = require('express'),
     schedule = require('node-schedule');
 
 // Change this to whichever algorithm you decide to use
@@ -111,16 +110,3 @@ function getTheShowOnTheRoad() {
 }
 
 console.log("StockBot locked and loaded...")
-
-var app = express();
-
-app.get('/', function(req, res) {
-    if (stockBotEngine.isRunning)
-        res.send('Stockbot running');
-    else
-        res.send('StockBot currently inoperative')
-});
-
-var server = app.listen(3000, function() {
-    console.log('Express server listening on port %d', server.address().port);
-});
