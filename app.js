@@ -74,7 +74,7 @@ function getTheShowOnTheRoad() {
         databaseController.init.sync(null, {
             trackedstocks: TRACKEDSTOCKS,
             URL: process.env.CLEARDB_DATABASE_URL,
-            drop: false
+            drop: !process.env.KEEP_DB_ON_START
         });
 
 
