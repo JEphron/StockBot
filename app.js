@@ -45,14 +45,11 @@ var accounts = [];
 var startRule = new schedule.RecurrenceRule();
 startRule.dayOfWeek = [1, 2, 3, 4, 5];
 startRule.hour = 9;
-startRule.minute = 0;
+startRule.minute = 30;
 
 var start = schedule.scheduleJob(startRule, function() {
     getTheShowOnTheRoad();
 });
-
-if (process.env.AUTOSTART)
-    getTheShowOnTheRoad();
 
 // 4:00 PM end
 var endRule = new schedule.RecurrenceRule();
@@ -64,12 +61,20 @@ var end = schedule.scheduleJob(endRule, function() {
     stockBotEngine.halt();
 });
 
+// automatically start stockbot if starting between 9AM and 4PM
+var date = new Date();
+var current_hour = date.getHours();
+process.env.AUTOSTART = true;
+if (process.env.AUTOSTART && current_hour > 9 && current_hour < 12 + 4)
+    getTheShowOnTheRoad();
+
+
 function getTheShowOnTheRoad() {
     Sync(function() {
         databaseController.init.sync(null, {
             trackedstocks: TRACKEDSTOCKS,
-            URL: "mysql://b870f4bf4082fe:962be024@us-cdbr-east-05.cleardb.net/heroku_2077dd96ba58fed?reconnect=true" || process.env.CLEARDB_DATABASE_URL,
-            drop: !process.env.KEEP_DB_ON_START
+            URL: process.env.CLEARDB_DATABASE_URL,
+            drop: false
         });
 
 

@@ -8,9 +8,8 @@ module.exports.onTimestep = function(data, callback) {
     var historicalSnapshots = [];
     var change = data.stockData.ChangeRealtime;
     var lots = data.lots;
-    console.log(data.stockObject.symbol);
-    var slowMA_PD = 2;
-    var fastMA_PD = 1;
+    var slowMA_PD = 5;
+    var fastMA_PD = 2;
     var fastMovingAvg = 0;
     var slowMovingAvg = 0;
     var action = "none";
