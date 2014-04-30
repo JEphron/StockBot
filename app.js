@@ -63,7 +63,7 @@ var end = schedule.scheduleJob(endRule, function() {
 
 // automatically start stockbot if starting between 9AM and 4PM
 var date = new Date();
-var current_hour = date.getHours();
+var current_hour = date.getHours() - 4;
 
 console.log(current_hour);
 
