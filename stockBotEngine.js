@@ -47,7 +47,7 @@ Engine.prototype.timestepActionCallback = function(params) {
 
     switch (action) {
         case 'buy':
-            //console.log("Buying", params.amount, "shares of", params.data.dataSymbol);
+            console.log("Buying", params.amount, "shares of", params.data.dataSymbol);
             async.each(this.accounts, function(account, next) {
                 account.placeOrder(params.data.dataSymbol, params.amount, 'buy', next)
             })
@@ -299,8 +299,12 @@ Engine.prototype.tick = function(callback) {
                             // bloaty bloaty blooo
                             timestepdata.stockObject = stockDBObject;
                             // find out how much money we actually have left
-
-                            timestepdata.funds = stats['Cash Remaining'].replace(/\$|\,/g, '');
+                            if (stats['Cash Remaining']) { //not sure why this would break, but it does
+                                timestepdata.funds = stats['Cash Remaining'].replace(/\$|\,/g, '');
+                            } else {
+                                console.error("Something went wrong with the stats fetch call. I have no idea what it was");
+                                timestepdata.funds = engine.funds;
+                            }
                             engine.funds = timestepdata.funds;
 
                             (function(timestepdata) {
