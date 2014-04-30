@@ -64,7 +64,9 @@ var end = schedule.scheduleJob(endRule, function() {
 // automatically start stockbot if starting between 9AM and 4PM
 var date = new Date();
 var current_hour = date.getHours();
-process.env.AUTOSTART = true;
+
+console.log(current_hour);
+
 if (process.env.AUTOSTART && current_hour > 9 && current_hour < 12 + 4)
     getTheShowOnTheRoad();
 
