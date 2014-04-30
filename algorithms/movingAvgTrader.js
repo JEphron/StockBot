@@ -59,7 +59,7 @@ module.exports.onTimestep = function(data, callback) {
                     callback({
                         data: data,
                         action: action,
-                        amount: 5, // ????
+                        amount: Math.floor((process.env.AMOUNT_PER_TICK || 2000) / data.stockData.AskRealtime), // ????
                         stopLimit: data.stockData.AskRealtime * 0.85 // gotta tweak this bitch (WARN: NOT USED)
                     });
                     cb();
