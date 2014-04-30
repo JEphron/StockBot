@@ -150,6 +150,7 @@ Engine.prototype.timestepActionCallback = function(params) {
 // stop the loop, emit the complete event for each remaining lot. Needs to be made more legit.
 Engine.prototype.halt = function() {
     var engine = this;
+    this.isRunning = false;
     if (!engine.timeoutObject)
         return console.log("SOME VOODOO SHIT HAPPENED RIGHT HERE");
     clearTimeout(engine.timeoutObject);
@@ -203,6 +204,8 @@ Engine.prototype.tick = function(callback) {
     var data = {};
     var engine = this;
     var symbols = [];
+    this.isRunning = true;
+
     // I hate everything about this function
     async.waterfall([
         // load a bunch of crap
