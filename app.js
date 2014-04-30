@@ -1,6 +1,13 @@
 // app.js
 // Entrypoint for the application
 
+
+// TODO:
+//      Make it so that we don't overwrite the database every single fucking time
+//      Should take days into account when calculating MA
+//      An actual web interface would be pretty cool I guess
+
+
 var http = require('http'),
     async = require('async'),
     Sync = require('sync'),
@@ -44,6 +51,9 @@ var start = schedule.scheduleJob(startRule, function() {
     getTheShowOnTheRoad();
 });
 
+if (process.env.AUTOSTART)
+    getTheShowOnTheRoad();
+
 // 4:00 PM end
 var endRule = new schedule.RecurrenceRule();
 endRule.dayOfWeek = [1, 2, 3, 4, 5];
@@ -59,7 +69,7 @@ function getTheShowOnTheRoad() {
         databaseController.init.sync(null, {
             trackedstocks: TRACKEDSTOCKS,
             URL: "mysql://b870f4bf4082fe:962be024@us-cdbr-east-05.cleardb.net/heroku_2077dd96ba58fed?reconnect=true" || process.env.CLEARDB_DATABASE_URL,
-            drop: true
+            drop: !process.env.KEEP_DB_ON_START
         });
 
 
