@@ -183,7 +183,7 @@ Engine.prototype.generateLoadHistoricalStockData = function(stockSymbol) {
 
                         trackedStock.getSnapshots({
                             sort: "id DESC",
-                            offset: (snapshotCount / trackedStockCount) - index - 1,
+                            offset: Math.floor((snapshotCount / trackedStockCount) - index - 1),
                             limit: 1
                         }).success(function(snapshot) {
                             callback(null, snapshot[0]);
