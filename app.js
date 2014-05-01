@@ -58,8 +58,6 @@ endRule.dayOfWeek = [1, 2, 3, 4, 5];
 endRule.hour = 12 + 3 + 4;
 endRule.minute = 58;
 
-
-// CLEARDB_DATABASE_URL = mysql://b870f4bf4082fe:962be024@us-cdbr-east-05.cleardb.net/heroku_2077dd96ba58fed?reconnect=true
 var end = schedule.scheduleJob(endRule, function() {
     stockBotEngine.halt();
 });
@@ -70,7 +68,7 @@ var current_hour = date.getHours() - 4; // timezoooooones
 
 console.log(current_hour);
 
-if (process.env.AUTOSTART && current_hour > 9 && current_hour < 12 + 4)
+if (process.env.AUTOSTART && current_hour >= 9 && current_hour < 12 + 4)
     getTheShowOnTheRoad();
 
 
