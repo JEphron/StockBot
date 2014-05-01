@@ -20,6 +20,11 @@ module.exports.init = function(params, callback) {
             dialect: "mysql",
             port: match.port,
             host: match.hostname,
+            pool: {
+                maxConnections: 9,
+                maxIdleTime: 30
+            },
+            maxConcurrentQueries: 9,
             logging: params.log || false
         });
     } else {
