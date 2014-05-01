@@ -58,10 +58,7 @@ endRule.dayOfWeek = [1, 2, 3, 4, 5];
 endRule.hour = 12 + 3 + 4;
 endRule.minute = 58;
 
-b870f4bf4082fe
-962be024
-us - cdbr - east - 05.cleardb.net
-heroku_2077dd96ba58fed
+
 // CLEARDB_DATABASE_URL = mysql://b870f4bf4082fe:962be024@us-cdbr-east-05.cleardb.net/heroku_2077dd96ba58fed?reconnect=true
 var end = schedule.scheduleJob(endRule, function() {
     stockBotEngine.halt();
