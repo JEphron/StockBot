@@ -88,29 +88,29 @@ function getTheShowOnTheRoad() {
         // });
 
 
+        // accounts.push(new MWAccount({
+        //     password: 'immabot',
+        //     email: 'a405312@drdrb.net',
+        //     gameName: process.env.MW_GAME_NAME || "testpleaseignore",
+        //     gamePassword: 'nodejs',
+        //     db: databaseController
+        // }));
+
         accounts.push(new MWAccount({
-            password: 'immabot',
-            email: 'a405312@drdrb.net',
+            password: 'abcd1234',
+            email: 'nadrojj@mac.com',
             gameName: process.env.MW_GAME_NAME || "testpleaseignore",
             gamePassword: 'nodejs',
             db: databaseController
         }));
 
-        // accounts.push(new MWAccount({
-        //     password: 'abcd1234',
-        //     email: 'nadrojj@mac.com',
-        //     gameName: 'testpleaseignore',
-        //     gamePassword: 'nodejs',
-        //     db: databaseController
-        // }));
-
-        // accounts.push(new MWAccount({
-        //     password: 'thisisapassword',
-        //     email: 'aidanpieper@gmail.com',
-        //     gameName: 'testpleaseignore',
-        //     gamePassword: 'nodejs',
-        //     db: databaseController
-        // }));
+        accounts.push(new MWAccount({
+            password: 'thisisapassword',
+            email: 'aidanpieper@gmail.com',
+            gameName: process.env.MW_GAME_NAME || "testpleaseignore",
+            gamePassword: 'nodejs',
+            db: databaseController
+        }));
 
         stockBotEngine = StockBotEngine.new.sync(null, {
             MWAccounts: accounts,
