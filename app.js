@@ -46,17 +46,17 @@ var accounts = [];
 var startRule = new schedule.RecurrenceRule();
 startRule.dayOfWeek = [1, 2, 3, 4, 5];
 startRule.hour = 9 + 4;
-startRule.minute = 05;
+startRule.minute = 45;
 
 var start = schedule.scheduleJob(startRule, function() {
     getTheShowOnTheRoad();
 });
 
-// 3:58 PM end
+// 3:55 PM end
 var endRule = new schedule.RecurrenceRule();
 endRule.dayOfWeek = [1, 2, 3, 4, 5];
 endRule.hour = 12 + 3 + 4;
-endRule.minute = 58;
+endRule.minute = 55;
 
 var end = schedule.scheduleJob(endRule, function() {
     stockBotEngine.halt();
