@@ -18,7 +18,7 @@ var http = require('http'),
     express = require('express'),
     schedule = require('node-schedule');
 
-var app = express();
+var app = express.createServer();
 
 app.configure(function() {
     app.set('views', __dirname);
