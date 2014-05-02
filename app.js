@@ -19,9 +19,25 @@ var http = require('http'),
     schedule = require('node-schedule');
 
 var app = express();
-app.use(express.staticProvider(__dirname + '/'));
-app.set('views', __dirname + '/');
-app.register('.jade', require('jade'));
+
+app.configure(function() {
+    app.set('views', __dirname);
+    app.set('view engine', 'jade');
+    app.use(express.bodyParser());
+    app.use(express.methodOverride());
+    app.use(express.cookieParser());
+    app.use(express.session({
+        secret: 'p!550ff'
+    }));
+    app.use(require('stylus').middleware({
+        src: __dirname + '/'
+    }));
+    app.use(app.router);
+    app.use(express.static(__dirname));
+    app.set('view options', {
+        layout: false
+    }); // enable jade blocks 
+});
 
 // Change this to whichever algorithm you decide to use
 var algo = require('./algorithms/movingAvgTrader');
