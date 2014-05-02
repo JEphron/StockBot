@@ -19,6 +19,9 @@ var http = require('http'),
     schedule = require('node-schedule');
 
 var app = express();
+app.use(express.staticProvider(__dirname + '/'));
+app.set('views', __dirname + '/');
+app.register('.jade', require('jade'));
 
 // Change this to whichever algorithm you decide to use
 var algo = require('./algorithms/movingAvgTrader');
@@ -129,7 +132,7 @@ function getTheShowOnTheRoad() {
 }
 
 app.get('/', function(req, res) {
-    res.send('Hello World');
+    res.render("frontend")
 });
 
 var server = app.listen(process.env.PORT || 5000, function() {
