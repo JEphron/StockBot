@@ -49,12 +49,12 @@ API.prototype.login = function(callback) {
             url: 'https://id.marketwatch.com/access/50eb2d087826a77e5d000001/latest/login_reload.html'
         }
     };
-
-    this.request.post(opts, function(err, res, body) {
+    var self = this;
+    self.request.post(opts, function(err, res, body) {
         if (err) return console.log(err);
         console.log("Login:", body);
         // server replies with a url to get auth cookies from
-        this.request.get(body.url, function(err, res, body) {
+        self.request.get(body.url, function(err, res, body) {
             if (err) return console.log(err);
             process.nextTick(function() {
                 callback();
