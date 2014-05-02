@@ -10,15 +10,18 @@
 // getStats() - gets player stats
 
 var cheerio = require('cheerio'),
-    async = require('async')
-    request = require('request').defaults({
-        jar: true // enable cookies in request
-    });
+    async = require('async'),
+    Request = require('request');
 
 var API = function(creds) {
     this.db = creds.db;
     delete creds.db;
     this.credentials = creds;
+    this.request = Request.defaults({
+        jar: Request.jar() // create new cookie jar for this instance of request
+    });
+
+
 }
 
 API.prototype.credentials = {};
@@ -47,11 +50,11 @@ API.prototype.login = function(callback) {
         }
     };
 
-    request.post(opts, function(err, res, body) {
+    this.request.post(opts, function(err, res, body) {
         if (err) return console.log(err);
         console.log("Login:", body);
         // server replies with a url to get auth cookies from
-        request.get(body.url, function(err, res, body) {
+        this.request.get(body.url, function(err, res, body) {
             if (err) return console.log(err);
             process.nextTick(function() {
                 callback();
@@ -82,7 +85,7 @@ API.prototype.placeOrder = function(dataSymbol, shares, orderType, callback) {
         }]
     };
 
-    request.post(opts, function(err, res, body) {
+    this.request.post(opts, function(err, res, body) {
         if (err) return console.log(err);
         if (body.succeeded) {
             console.log("SUCCESS!", dataSymbol, orderType, shares, body.message);
@@ -98,7 +101,7 @@ API.prototype.placeOrder = function(dataSymbol, shares, orderType, callback) {
 // Get the portfolio page and parse the orders table
 // Return a list of orders
 API.prototype.getOrders = function(callback) {
-    request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/orders', function(err, res, body) {
+    this.request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/orders', function(err, res, body) {
         // parse the HTML of the page
         var $ = cheerio.load(body);
         var orders = [];
@@ -123,7 +126,7 @@ API.prototype.getOrders = function(callback) {
 // Gets the players holdings as an array
 API.prototype.getHoldings = function(callback) {
     // get the holding's partial
-    request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/Holdings?view=list&partial=true', function(err, res, body) {
+    this.request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/Holdings?view=list&partial=true', function(err, res, body) {
         if (err) return console.log(err);
         var $ = cheerio.load(body);
         var holdings = [];
@@ -162,7 +165,7 @@ API.prototype.getHoldings = function(callback) {
 //   'Short Reserve': '$0.00' }
 
 API.prototype.getStats = function(callback) {
-    request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/orders', function(err, res, body) {
+    this.request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/orders', function(err, res, body) {
         var $ = cheerio.load(body);
         var stats = {};
         // get each li that is the direct child of the ul with the class performance in the section with the class playerdetail
@@ -181,7 +184,7 @@ API.prototype.getStats = function(callback) {
 }
 
 API.prototype.getTransactions = function(callback) {
-    request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/transactionhistory?view=list&partial=true', function(err, res, body) {
+    this.request.get('http://www.marketwatch.com/game/' + this.credentials.gameName + '/portfolio/transactionhistory?view=list&partial=true', function(err, res, body) {
         var $ = cheerio.load(body);
         var transactions = {};
 
