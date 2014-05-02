@@ -20,22 +20,22 @@ var http = require('http'),
 
 var app = express();
 
-app.set('views', __dirname);
-app.set('view engine', 'jade');
-app.use(express.bodyParser());
-app.use(express.methodOverride());
-app.use(express.cookieParser());
-app.use(express.session({
-    secret: 'p!550ff'
-}));
-app.use(require('stylus').middleware({
-    src: __dirname + '/'
-}));
-app.use(app.router);
-app.use(express.static(__dirname));
-app.set('view options', {
-    layout: false
-}); // enable jade blocks 
+// app.set('views', __dirname);
+// app.set('view engine', 'jade');
+// app.use(express.bodyParser());
+// app.use(express.methodOverride());
+// app.use(express.cookieParser());
+// app.use(express.session({
+//     secret: 'p!550ff'
+// }));
+// app.use(require('stylus').middleware({
+//     src: __dirname + '/'
+// }));
+// app.use(app.router);
+// app.use(express.static(__dirname));
+// app.set('view options', {
+//     layout: false
+// }); // enable jade blocks 
 
 // Change this to whichever algorithm you decide to use
 var algo = require('./algorithms/movingAvgTrader');
@@ -146,7 +146,7 @@ function getTheShowOnTheRoad() {
 }
 
 app.get('/', function(req, res) {
-    res.render("frontend")
+    res.send("hello");
 });
 
 var server = app.listen(process.env.PORT || 5000, function() {
