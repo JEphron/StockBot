@@ -80,7 +80,7 @@ module.exports.onTimestep = function(data, callback) {
                     }
                 } else if (lot.type == "short") {
                     if (lot.priceAtTimeOfPurchase - data.stockData.AskRealtime > 11) {
-                        // give MW 30 seconds to sell off long orders before trying to cover shorts
+                        // give MW 15 seconds to sell off long orders before trying to cover shorts
                         // I suspect that MW secretly won't let you cover and sell at the same time
                         (function(callback, data, lot) { // I have no idea how context works in JS. Better to be safe...
                             setTimeout(function() {
@@ -90,7 +90,7 @@ module.exports.onTimestep = function(data, callback) {
                                     amount: lot.sharesOwned, // TODO: percentage based on angle of increase
                                     lotToSell: lot
                                 });
-                            }, 30000)
+                            }, 15000)
                         })(callback, data, lot);
                     }
                 }

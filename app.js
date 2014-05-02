@@ -66,8 +66,6 @@ var end = schedule.scheduleJob(endRule, function() {
 var date = new Date();
 var current_hour = date.getHours() - 4; // timezoooooones
 
-console.log(current_hour);
-
 if (process.env.AUTOSTART && current_hour >= 9 && current_hour < 12 + 4)
     getTheShowOnTheRoad();
 
