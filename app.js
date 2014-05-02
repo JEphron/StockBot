@@ -15,7 +15,10 @@ var http = require('http'),
     MWAccount = require('./marketWatchAccount'),
     StockBotEngine = require('./stockBotEngine'),
     databaseController = require('./database'),
+    express = require('express'),
     schedule = require('node-schedule');
+
+var app = express();
 
 // Change this to whichever algorithm you decide to use
 var algo = require('./algorithms/movingAvgTrader');
@@ -124,5 +127,13 @@ function getTheShowOnTheRoad() {
 
     })
 }
+
+app.get('/', function(req, res) {
+    res.send('Hello World');
+});
+
+var server = app.listen(3000, function() {
+    console.log('Listening on port %d', server.address().port);
+});
 
 console.log("StockBot locked and loaded...")
