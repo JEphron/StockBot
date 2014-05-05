@@ -52,7 +52,7 @@ module.exports.onTimestep = function(data, callback) {
         },
 
         executeBuys: function(cb) {
-            var shouldBuy = (Math.random() * 10 < 5); // yeah
+            var shouldBuy = (Math.random() * 10 < (process.env.RND_FACTOR_OUT_OF_TEN||5)); // yeah
             if (shouldBuy) {
                 process.nextTick(function() {
                     callback({
