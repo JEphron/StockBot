@@ -115,16 +115,16 @@ function getTheShowOnTheRoad() {
         // }));
 
         accounts.push(new MWAccount({
-            password: 'abcd1234',
-            email: 'nadrojj@mac.com',
+            password: process.env.UPASS_1 || 'abcd1234',
+            email: process.env.UEMAIL_1 || 'nadrojj@mac.com',
             gameName: process.env.MW_GAME_NAME || "testpleaseignore",
             gamePassword: 'nodejs',
             db: databaseController
         }));
 
         accounts.push(new MWAccount({
-            password: 'thisisapassword',
-            email: 'aidanpieper@gmail.com',
+            password: process.env.UPASS_2 || 'thisisapassword',
+            email: process.env.UEMAIL_2 || 'aidanpieper@gmail.com',
             gameName: process.env.MW_GAME_NAME || "testpleaseignore",
             gamePassword: 'nodejs',
             db: databaseController
