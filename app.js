@@ -15,10 +15,8 @@ var http = require('http'),
     MWAccount = require('./marketWatchAccount'),
     StockBotEngine = require('./stockBotEngine'),
     databaseController = require('./database'),
-    express = require('express'),
     schedule = require('node-schedule');
 
-var app = express();
 
 // app.set('views', __dirname);
 // app.set('view engine', 'jade');
@@ -145,12 +143,5 @@ function getTheShowOnTheRoad() {
     })
 }
 
-app.get('/', function(req, res) {
-    res.send("hello");
-});
-
-var server = app.listen(process.env.PORT || 5000, function() {
-    console.log('Listening on port %d', server.address().port);
-});
 
 console.log("StockBot locked and loaded...")

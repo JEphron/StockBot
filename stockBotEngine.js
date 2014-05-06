@@ -155,6 +155,7 @@ Engine.prototype.halt = function() {
         return console.log("SOME VOODOO SHIT HAPPENED RIGHT HERE");
     clearTimeout(engine.timeoutObject);
     engine.orm.db.Lot.findAll().success(function(lots) {
+        console.log(lots);
         var data = {
             lots: lots
         }
