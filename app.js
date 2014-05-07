@@ -78,6 +78,7 @@ endRule.minute = 55;
 
 var end = schedule.scheduleJob(endRule, function() {
     stockBotEngine.halt();
+    process.exit();
 });
 
 // automatically start stockbot if starting between 9AM and 4PM

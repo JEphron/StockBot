@@ -55,6 +55,7 @@ Engine.prototype.timestepActionCallback = function(params) {
             engine.funds -= params.amount * params.data.stockData.AskRealtime - TRANSACTION_FEE;
 
             if (engine.funds < 0) {
+                // this needs to not happen. 
                 console.error("\n\n\n YALL GOT FUCKED UP. \n\n\nFUNDS:", engine.funds, "TRADES:", snapshotIndex);
                 process.exit();
                 return;
