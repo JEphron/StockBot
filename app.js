@@ -121,13 +121,13 @@ function getTheShowOnTheRoad() {
             db: databaseController
         }));
 
-        accounts.push(new MWAccount({
-            password: process.env.UPASS_2 || 'thisisapassword',
-            email: process.env.UEMAIL_2 || 'aidanpieper@gmail.com',
-            gameName: process.env.MW_GAME_NAME || "testpleaseignore",
-            gamePassword: 'nodejs',
-            db: databaseController
-        }));
+        // accounts.push(new MWAccount({
+        //     password: process.env.UPASS_2 || 'thisisapassword',
+        //     email: process.env.UEMAIL_2 || 'aidanpieper@gmail.com',
+        //     gameName: process.env.MW_GAME_NAME || "testpleaseignore",
+        //     gamePassword: 'nodejs',
+        //     db: databaseController
+        // }));
 
         stockBotEngine = StockBotEngine.new.sync(null, {
             MWAccounts: accounts,
